@@ -1,2 +1,2 @@
 # FinalProject
-The LaTeX repository Associated with our final project.
+The LaTeX repository associated with our final project.

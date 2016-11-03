@@ -1,0 +1,50 @@
+% file: master.tex
+
+\documentclass{report}
+
+\usepackage{graphicx}
+\usepackage{subfiles}
+\usepackage{fullpage}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{color}
+\setcounter{secnumdepth}{1} % only chapter and sections will be numbered
+\setcounter{tocdepth}{3}    % entries down to \subsubsections in the TOC
+
+\definecolor{mygray}{rgb}{0.98,0.98,0.98}
+\lstset { %
+		backgroundcolor=\color{mygray}, 
+		basicstyle=\fontfamily{pcr}\selectfont\small,
+		breaklines=true,
+		numbers=left,
+    tabsize=2
+}
+
+\definecolor{darkblue}{rgb}{0.089,0.21,0.363}
+\titleformat{\chapter}
+  {\LARGE\LARGE\bfseries\color{darkblue}}{{\LARGE\thechapter.\ }}{6pt}{}
+
+\author{
+  Ishaan Kolluri \\ \small{isk2108} \\ \small{Project Manager}
+  \and Jared Samet \\ \small{jss2272} \\ \small{Language Guru}
+  \and Nigel Schuster \\ \small{ns3158}  \\ \small{System Architect}
+  \and Kevin Ye\\ \small{ky2294} \\ \small{Tester}
+}
+\title{Extend Language Final Report}
+
+\begin{document}
+	\maketitle
+	\tableofcontents
+	\pagebreak
+  
+  %\input{tex/introduction}
+  %\input{tex/tutorial}
+  %\input{tex/lrm}
+  %\input{tex/plan}
+  %\input{tex/architecture}
+  %\input{tex/testing}
+  %\input{tex/lessons}
+  %\input{tex/code}
+	%\input{tex/tests}
+
+\end{document}

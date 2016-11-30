@@ -1,0 +1,276 @@
+\chapter{Language Usage Tutorial}
+
+This will cover the configuration of the user's environment and the usage of Extend's features.
+
+\section{Setup}
+The Extend compiler requires that the OCaml Language and LLVM be installed on the host machine. Development was done in a virtual machine running the 64-bit Ubuntu 16.04 operating system.
+
+	\begin{lstlisting}
+		sudo apt-get install -y ocaml m4 llvm opam oasis ounit
+		opam init
+		opam install llvm.3.8 ocamlfind
+		eval `opam config env`
+	\end{lstlisting}
+% More may be needed here. LLVM version should also be checked.
+
+	\medskip \noindent After setting up the environment, clone the Extend git repository:
+
+	\begin{lstlisting}
+git clone https://github.com/ExtendLang/Extend.git
+	\end{lstlisting}
+
+\section{Compiling and Running Extend Code}
+To build the Extend compiler, the first steps are the following.
+
+	\begin{lstlisting}
+cd Extend/
+make
+	\end{lstlisting}
+
+	\medskip \noindent
+	If this does not successfully build, run \texttt{eval `opam config env`}, which should configure the environment to use OPAM packages. Alternatively, add this command to your bash profile.
+
+	 \medskip \noindent
+	 After running \texttt{make}, you should see a \texttt{main.byte} file. To compile and run an Extend program, perform the following:
+
+	\begin{lstlisting}
+	./compile.sh example_source_file.xtnd
+	\end{lstlisting}
+	% TODO: Incorporating C and Extend Standard Library/Initialization Functions?
+
+	\medskip \noindent
+	This should produce an \texttt{out} file. Running \texttt{./out} should successfully run the program.
+
+\section{Writing Extend Code - The Basics}
+Extend code can be written in a file that contains the conventional \texttt{.xtnd} extension. It consists of optional import statements and global variables, and one or more series of functions. Runnable Extend programs must contain a \texttt{main} function, and other functions can be written into the program as well.
+\newline \newline
+Below is a short tour of the features of Extend. More detail can be found in the next chapter - the Language Reference Manual. Please note Extend uses the \texttt{range} data type to represent multiple cells of data, composed of primitive data types or another \texttt{range}.
+
+	\subsection{Functions}
+	Functions are commonplace in Extend. They are declared with the syntax \texttt{function\_name([optional\_dimensions] function\_arguments)\{...\}}. Below is the syntax of the \texttt{main} function, which is needed to run Extend code, within a simple Extend program.
+
+	\begin{lstlisting}
+	main(args){
+			return 0;
+	}
+	\end{lstlisting}
+	% Perhaps a more informative program - but not too difficult.
+
+	\medskip \noindent
+ 	The return type of a function is a \textbf{range} of flexible size. \textbf{Ranges} will be discussed in a later section of this chapter. A function is composed of a series of statements, concluding with the return statement.
+	Note that the \textbf{return} statement is always the last statement in the function.
+
+		\subsubsection{Function Parameters}
+		Function parameters consist of zero or more ranges, signed with an optional dimension. If the arguments have been written with dimensions, those dimensions will be verified at runtime.
+		\begin{lstlisting}
+			foo([m,n] arg){
+				return m * n; \\ m and n initialized through arg1
+			}
+
+			bar([1,1] arg){
+				return 0; \\ 1 by 1 ranges should be primitive data types. If arg is not, a runtime error will be thrown
+			}
+		\end{lstlisting}
+
+	\subsection{Primitive Data Types}
+	Extend has three primitive data types: Numbers, Strings, and \texttt{empty}. An example of each is shown below.
+
+	\begin{lstlisting}
+		bar := 5; \\ Assigns bar to a number
+		foo := "Hello World"; \\ Assigns foo to a string
+		bar = empty; \\ Reassigns bar to empty
+	\end{lstlisting}
+
+	\medskip \noindent
+	\textbf{Note} that we declare a variable and assign it a value together with \texttt{:=}. If the variable already exists, \texttt{=} will suffice.
+	More information about Extend's primitive data types can be found in the Language Reference Manual.
+
+		\subsubsection{The type() function}
+		Extend offers a \texttt{type(expr)} function, which takes and expression and returns Number, String, Range, or Empty.
+
+	\subsection{Operators}
+	Extend includes a comprehensive set of operators. Each category is listed in order of precedence. A more detailed explanation of each operator can be found in the Language Reference Manual.
+
+		\subsubsection{Arithmetic Operators}
+			\begin{itemize}
+				\item Unary Operations: \texttt{-}
+				\item Binary Operations: \texttt{**, *, /, \%, +, -}
+			\end{itemize}
+
+		\subsubsection{Bitwise Operators}
+			\begin{itemize}
+				\item Unary Operations: \texttt{\~}
+				\item Binary Operations: \texttt{<<, >>, \&, |, \^}
+			\end{itemize}
+
+		\subsubsection{Boolean Operators}
+			\begin{itemize}
+				\item Unary Operations: \texttt{!}
+				\item Binary Operations: \texttt{==, !=, <, >, <=, >=, \&\&, ||}
+			\end{itemize}
+
+		\subsubsection{String Concatenation}
+		Note that the \texttt{+} symbol can be used to perform concatenation between two strings.
+
+		\begin{lstlisting}
+			"Hello " + "World\n"
+		\end{lstlisting}
+
+	\subsection{Conditionals}
+	There are two types of conditionals: the ternary conditional and a \texttt{switch} expression.
+
+		\subsubsection{The Ternary Conditional}
+		The two ways to write the ternary condition are as follows: \newline \newline
+		\texttt{condition ? expr\_if\_true : expr\_if\_false} \newline \newline
+		or: \newline \newline
+		\texttt{if(conditional, expr\_if\_true, expr\_if\_false)}
+
+		\subsubsection{The Switch Expression}
+		Below is an example of the switch case used in a function:
+
+		\begin{lstlisting}
+			switch_func(foo){
+				return switch(foo){
+					case 1: "Hello, one!";
+					case 2: "Hello, two!";
+					default: "Hello?";
+				};
+			}
+		\end{lstlisting}
+
+	\subsection{Ranges}
+	Ranges are an incredibly important aspect of Extend. A range is a composite data type composed of rows and columns of cells.
+	Each cell contains a formula that can evaluate to another range or one of the aforementioned three data types - number, string, or \texttt{empty}. Note that \textbf{1 by 1} ranges are automatically dereferenced to their contents in Extend.
+
+	\begin{lstlisting}
+		[1,2] foo; \\ Declares range of dimensions 1 by 2
+		[1,3] bar := 4; \\ Declares range of dimensions 1 by 3, and assigns each cell to 4
+	\end{lstlisting}
+
+	\medskip \noindent
+	Ranges can also be declared as range literals. Rows are delineated by \texttt{;} and columns by \texttt{,}.
+
+	\begin{lstlisting}
+		foo := {"Hello", 1, 2; 3, 4, 5; 6, 7, 8} \\ Three rows, three columns.
+	\end{lstlisting}
+
+		\subsubsection{Range Slicing \& Selection}
+		Python-style array-slicing syntax can be applied to ranges, which will return a subrange based on either absolute or relative indexing. All indices are zero-based.
+
+		\begin{lstlisting}
+			foo[0,2] \\ The cell in the first row, third column
+			foo[0,:] \\ The range of cells in the first row
+			foo[0,[1]] \\ The range in the column that is 1 column right of the left-hand-side cell.
+			foo[,] \\ Cell in first row, first column if 1 by 1. If not, then relative first row and relative first column
+		\end{lstlisting}
+
+		\medskip \noindent
+		More examples and detail can be found in the next chapter.
+
+		\subsubsection{The Hash Operator}
+		A common case for ranges in Excel is to perform calculations on specific cells. For example, \texttt{foo[,]} is commonly used to retrieve the cell that is being calculated on.
+		Since this is a popular use case, the \texttt{\#} operator will perform the same functionality.
+
+
+		\subsubsection{Application on Ranges}
+		Extend, in the vein of spreadsheets, allows the programmer to apply functions cell-wise on a range. Using the \texttt{\#} operator, we can perform cell-wise multiplication across two ranges.
+
+		\begin{lstlisting}
+			foo([m,n] arg1, [m.n] arg2){
+				[m,n] bar := #arg1 * #arg2; \\ Multiplies the cell in arg1 with the corresponding cell in arg2.
+				return bar;
+			}
+		\end{lstlisting}
+
+		\medskip \noindent
+		This is an incredibly powerful aspect of Extend. Make sure to study it well!
+
+		\subsubsection{Range Attribute Functions}
+		Extend has the \texttt{row()} and \texttt{column()} functions, which respectively return the row and column of the cell that is being calculated at that point in time.
+		There is also a \texttt{size(expr)} function, which returns a 1 by 2 range; the first cell contains the number of rows, and the second cell contains the number of columns.
+
+	\subsection{Precedence Expressions}
+	Precedence Expressions are used to force the evaluation of one expression before another. This is used when the order of operation is required for functions with side effects, such as the ones housed in Extend's standard library.
+	The \texttt{->} operator is used to denote precedence.
+
+	\begin{lstlisting}
+		return print_func(4) -> 0; \\ print_func prints 4 to stdout before returning 0
+	\end{lstlisting}
+
+	\subsection{Import Statements}
+	In Extend, you can import other Extend files at the top of your program via relative directory path. The use case is below:
+
+	\begin{lstlisting}
+		import "../programs/helloworld.xtnd"
+	\end{lstlisting}
+
+
+\section{Standard Library Functions}
+Extend offers an assortment of standard library functions. In order to use them, an \texttt{extern} statement must be added at the top of the file, which tells the program where to look for the standard library function you want.
+
+\begin{lstlisting}
+	extern "stdlib.o" {
+		toString(a);
+		extend_open(a,b);
+		extend_sin(a);
+		print(a,b);
+	}
+\end{lstlisting}
+
+\medskip \noindent
+The letters \texttt{a} and \texttt{b} represent how many parameters Extend should expect that function to have.
+
+While their usage will be covered in more length in the Language Reference Manual, here are some of the more useful standard library functions to remember.
+	\subsection{Basic Functions}
+		\subsubsection{The toString() Function}
+		The \texttt{toString()} function takes a 1 by 1 range and renders its value as a string. This will return one of the primitive data types.
+
+		\begin{lstlisting}
+			return "Hello " + toString(14); \\ "Hello 14"
+		\end{lstlisting}
+
+		\subsubsection{Print Function}
+		Extend allows the reader to easily print to stdout. It is called with the \texttt{print} signature, and takes two parameters - the location to print to, and the string to print.
+
+		\begin{lstlisting}
+			print(1, "Hello World\n") \\ Prints Hello World to stdout
+		\end{lstlisting}
+
+		\subsubsection{Math Functions}
+		Borrowing from C's standard library math functions, Extend offers: \texttt{sin, cos, tan, acos, asin, atan, sinh, cosh, tanh, exp, log, log10, sqrt, ceil, fabs} and \texttt{floor}.
+		To use them, each function is called with the \texttt{extend\_} prefix, and must be declared similarly in the \texttt{extern} statement.
+
+		\begin{lstlisting}
+			extern "stdlib.o" {
+				extend_sqrt(b);
+				print(a,b);
+				toString(a);
+			}
+			main(args){
+				bar := extend_sqrt(16);
+				return print(1, toString(bar)) -> 0; \\ Prints 4 to stdout
+			}
+		\end{lstlisting}
+
+	\subsection{File I/O}
+	Extend has \texttt{extend\_open, extend\_close, extend\_read, and extend\_write} functions to interact with files. Usage is as follows:
+
+	\begin{lstlisting}
+		extern "stdlib.o" {
+		  extend_open(a,b);
+		  extend_read(a,b);
+		  extend_close(a);
+		  print(a,b);
+		}
+
+		[1,1] main(args){
+		  return print(1, extend_read(extend_open("test_file.txt", "r"),5)) -> 0;
+		}
+	\end{lstlisting}
+
+	\subsection{Plotting}
+	Extend also offers the ability to export plots to a PNG file with the \texttt{extend\_plot} function.
+
+	\begin{lstlisting}
+		TODO: Demonstrate usage here.
+	\end{lstlisting}

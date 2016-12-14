@@ -8,6 +8,7 @@
 \usepackage{listings}
 \usepackage{titlesec}
 \usepackage{color}
+\usepackage{hyperref}
 \setcounter{secnumdepth}{1} % only chapter and sections will be numbered
 \setcounter{tocdepth}{3}    % entries down to \subsubsections in the TOC
 
@@ -23,6 +24,13 @@
 \definecolor{darkblue}{rgb}{0.089,0.21,0.363}
 \titleformat{\chapter}
   {\LARGE\LARGE\bfseries\color{darkblue}}{{\LARGE\thechapter.\ }}{6pt}{}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=darkblue,
+    filecolor=magenta,
+    urlcolor=darkblue,
+}
+
 
 \author{
   Ishaan Kolluri \\ \small{isk2108} \\ \small{Project Manager}
@@ -41,6 +49,7 @@
   %\input{tex/tutorial}
   %\input{tex/lrm}
   \input{tex/plan}
+	\input{tex/git}
   %\input{tex/architecture}
   %\input{tex/testing}
   %\input{tex/lessons}

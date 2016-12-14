@@ -6,12 +6,11 @@ This will cover the configuration of the user's environment and the usage of Ext
 The Extend compiler requires that the OCaml Language and LLVM be installed on the host machine. Development was done in a virtual machine running the 64-bit Ubuntu 16.04 operating system.
 
 	\begin{lstlisting}
-		sudo apt-get install -y ocaml m4 llvm opam oasis ounit
+		sudo apt-get install -y ocaml m4 llvm opam
 		opam init
-		opam install llvm.3.8 ocamlfind
+		opam install llvm.3.8 ocamlfind oasis ounit
 		eval `opam config env`
 	\end{lstlisting}
-% More may be needed here. LLVM version should also be checked.
 
 	\medskip \noindent After setting up the environment, clone the Extend git repository:
 
@@ -31,15 +30,14 @@ make
 	If this does not successfully build, run \texttt{eval `opam config env`}, which should configure the environment to use OPAM packages. Alternatively, add this command to your bash profile.
 
 	 \medskip \noindent
-	 After running \texttt{make}, you should see a \texttt{main.byte} file. To compile and run an Extend program, perform the following:
+	 After running \texttt{make}, you should see a \texttt{main.byte} file. To compile and run an Extend program, we have provided a shell script to simplify the process for the user:
 
 	\begin{lstlisting}
 	./compile.sh example_source_file.xtnd
 	\end{lstlisting}
-	% TODO: Incorporating C and Extend Standard Library/Initialization Functions?
 
 	\medskip \noindent
-	This should produce an \texttt{out} file. Running \texttt{./out} should successfully run the program.
+	This should produce an \texttt{out} file. Running \texttt{./out} should successfully execute the program.
 
 \section{Writing Extend Code - The Basics}
 Extend code can be written in a file that contains the conventional \texttt{.xtnd} extension. It consists of optional import statements and global variables, and one or more series of functions. Runnable Extend programs must contain a \texttt{main} function, and other functions can be written into the program as well.
@@ -204,20 +202,9 @@ Below is a short tour of the features of Extend. More detail can be found in the
 	\end{lstlisting}
 
 \section{Standard Library Functions}
-Extend offers an assortment of standard library functions. In order to use them, an \texttt{extern} statement must be added at the top of the file, which tells the program where to look for the standard library function you want.
-
-\begin{lstlisting}
-	extern "stdlib.o" {
-		toString(a);
-		extend_open(a,b);
-		extend_sin(a);
-		print(a,b);
-	}
-\end{lstlisting}
+Extend offers an assortment of standard library functions. Extend imports \texttt{stdlib.xtnd}, which has aggregated all the standard library functions for the user's disposal.
 
 \medskip \noindent
-The letters \texttt{a} and \texttt{b} represent how many parameters Extend should expect that function to have.
-
 While their usage will be covered in more length in the Language Reference Manual, here are some of the more useful standard library functions to remember.
 	\subsection{Basic Functions}
 		\subsubsection{The toString() Function}
@@ -231,43 +218,30 @@ While their usage will be covered in more length in the Language Reference Manua
 		Extend allows the reader to easily print to stdout. It is called with the \texttt{print} signature, and takes two parameters - the location to print to, and the string to print.
 
 		\begin{lstlisting}
-			print(1, "Hello World\n") \\ Prints Hello World to stdout
+			print(STDOUT, "Hello World\n") \\ Prints Hello World to stdout
 		\end{lstlisting}
 
 		\subsubsection{Math Functions}
 		Borrowing from C's standard library math functions, Extend offers: \texttt{sin, cos, tan, acos, asin, atan, sinh, cosh, tanh, exp, log, log10, sqrt, ceil, fabs} and \texttt{floor}.
-		To use them, each function is called with the \texttt{extend\_} prefix, and must be declared similarly in the \texttt{extern} statement.
 
 		\begin{lstlisting}
-			extern "stdlib.o" {
-				extend_sqrt(b);
-				print(a,b);
-				toString(a);
-			}
 			main(args){
-				bar := extend_sqrt(16);
-				return print(1, toString(bar)) -> 0; \\ Prints 4 to stdout
+				bar := sqrt(16);
+				return print(STDOUT, toString(bar)) -> 0; \\ Prints 4 to stdout
 			}
 		\end{lstlisting}
 
 	\subsection{File I/O}
-	Extend has \texttt{extend\_open, extend\_close, extend\_read, and extend\_write} functions to interact with files. Usage is as follows:
+	Extend has \texttt{open, close, read, and write} functions to interact with files. Usage is as follows:
 
 	\begin{lstlisting}
-		extern "stdlib.o" {
-		  extend_open(a,b);
-		  extend_read(a,b);
-		  extend_close(a);
-		  print(a,b);
-		}
-
-		[1,1] main(args){
-		  return print(1, extend_read(extend_open("test_file.txt", "r"),5)) -> 0;
+		main(args){
+		  return print(STDOUT, read(open("test_file.txt", "r"),5)) -> 0;
 		}
 	\end{lstlisting}
 
 	\subsection{Plotting}
-	Extend also offers the ability to export plots to a PNG file with the \texttt{extend\_plot} function.
+	Extend also offers the ability to export plots to a PNG file with the \texttt{plot} function.
 
 	\begin{lstlisting}
 		TODO: Demonstrate usage here.

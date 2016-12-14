@@ -1,0 +1,3 @@
+[submodule "Extend"]
+	path = Extend
+	url = https://github.com/ExtendLang/Extend

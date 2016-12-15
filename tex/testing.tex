@@ -18,16 +18,21 @@ Development of new features naturally means that they must be deemed legal by th
   \end{enumerate}
 
   \medskip \noindent
-  Earlier in the development process, we tested the front end of our compiler by JSON-ifying the abstract syntax tree and examinining it. As we settled into full-fledged development, we would test with a full-feature regression test suite.
+  Earlier in the development process, we tested the front end of our compiler by JSON-ifying the abstract syntax tree, printing it, and examinining it. As we settled into full-fledged development, we would test with a full-feature regression test suite.
+  Later in the semester, JSON-ifying still proved to be useful, as it gave us the option to print debug statements if needed.
 
 \section{Regression Test Suite}
-Extend's regression test suite is executable through the \texttt{testscript.sh} script at the top level of the project. There are over 100 integration test files for various features of the Extend language, and a corresponding file with their expected output to \texttt{stdout}. This is to ensure that the successful implementation of one feature does not impact that of others.
+Extend's test suite is executable through the \texttt{testscript.sh} script at the top level of the project. There are over 100 integration test files for various features of the Extend language, and a corresponding file with their expected output to \texttt{stdout}. This is to ensure that the successful implementation of one feature does not impact that of others.
 
 \medskip \noindent
-The test script iterates through every test file in the \texttt{inputs\_regression} directory. It compiles and executes the test, and compares it with the corresponding expected output file living in the \texttt{expected} directory. Some of these tests were "passing" tests, meant to confirm successful output, and some were "failing" tests, identifying the ability of the language to detect illegal actions and exit gracefully.
+Regression tests were placed in the \texttt{testcases/inputs\_regression} directory. Tests that did not pass at the time were placed in the \texttt{testcases/inputs} directory. The test script compiles and executes each test, and compares it with the corresponding expected output file, living in the \texttt{testcases/expected} directory. Whenever a test passed in \texttt{inputs}, it was automatically moved over to \texttt{inputs\_regression}.
+
 
 \medskip \noindent
 \textbf{Note:} We have added a full test listing at the end of this document. Please refer to the chapter titled "Test Listing" for more detail.
 
   \subsection{Integration with Travis CI}
   The aforementioned test suite is run by Travis CI in the event that the Extend compiler is successfully built; otherwise, the build will fail and exit. In our development workflow, checking the logs during build failures sometimes revealed that tests in the regression test suite did not succeed as expected. This integration kept the far-reaching effects of newly introduced features entirely transparent throughout the process.
+
+  \medskip \noindent
+  Using Travic CI allowed us to maintain the working ability of our compiler, as it ensured that every new feature pushed to the master branch would still result in a successful build. This proved to be invaluable when testing the compiler at a macro-level, or providing Jacob, our TA, with up-to-date demonstrations.

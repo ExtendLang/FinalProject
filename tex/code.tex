@@ -1,0 +1,2946 @@
+\chapter{Extend Code Listing}
+\section{scanner.mll}
+\begin{lstlisting}{ocaml}
+{
+  open Lexing
+  open Parser
+  open String
+
+  exception SyntaxError of string
+  let syntax_error lexbuf = raise (SyntaxError("Invalid character: " ^ Lexing.lexeme lexbuf))
+}
+
+let digit = ['0'-'9']
+let exp = 'e'('+'|'-')?['0'-'9']+
+let flt = (digit)+ ('.' (digit)* exp?|exp)
+let id = ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_']*
+
+
+rule token = parse
+  ['\n']               { new_line lexbuf; token lexbuf }
+| [' ' '\t' '\r']      { token lexbuf }   (* Whitespace *)
+| "/*"                 { multiline_comment lexbuf }
+| "//"                 { oneline_comment lexbuf }
+| '"'                  { read_string (Buffer.create 17) lexbuf }
+| '['             { LSQBRACK }
+| ']'             { RSQBRACK }
+| '('             { LPAREN }
+| ')'             { RPAREN }
+| '{'             { LBRACE }
+| '}'             { RBRACE }
+| ":="            { GETS }
+| '='             { ASN }
+| ':'             { COLON }
+| ','             { COMMA }
+| "->"            { PRECEDES }
+| '?'             { QUESTION }
+| "=="            { EQ }
+| "!="            { NOTEQ }
+| '<'             { LT }
+| '>'             { GT }
+| "<="            { LTEQ }
+| ">="            { GTEQ }
+| ';'             { SEMI }
+| '!'             { LOGNOT }
+| "&&"            { LOGAND }
+| "||"            { LOGOR }
+| '~'             { BITNOT }
+| '&'             { BITAND }
+| '|'             { BITOR }
+| '^'             { BITXOR }
+| '_'             { UNDERSCORE }
+| '+'             { PLUS }
+| '-'             { MINUS }
+| '*'             { TIMES }
+| '/'             { DIVIDE }
+| '%'             { MOD }
+| "**"            { POWER }
+| "<<"            { LSHIFT }
+| ">>"            { RSHIFT }
+| '#'             { HASH }
+| "if"            { IF }
+| "empty"         { EMPTY }
+| "size"          { SIZE }
+| "type"          { TYPE }
+| "row"           { ROW }
+| "column"        { COLUMN }
+| "switch"        { SWITCH }
+| "case"          { CASE }
+| "default"       { DEFAULT }
+| "return"        { RETURN }
+| "import"        { IMPORT }
+| "global"        { GLOBAL }
+| "extern"        { EXTERN }
+| "debug"         { DEBUG }
+| digit+ as lit   { LIT_INT(int_of_string lit) }
+| flt as lit      { LIT_FLOAT(float_of_string lit) }
+| id as lit       { ID(lit) }
+| eof             { EOF }
+| _               { syntax_error lexbuf }
+
+and multiline_comment = parse
+  "*/" { token lexbuf }
+| '\n' { new_line lexbuf; multiline_comment lexbuf }
+| _    { multiline_comment lexbuf }
+
+and oneline_comment = parse
+  '\n' { new_line lexbuf; token lexbuf }
+| _    { oneline_comment lexbuf }
+
+(* read_string mostly taken from:
+https://realworldocaml.org/v1/en/html/parsing-with-ocamllex-and-menhir.html *)
+and read_string buf =
+  parse
+  | '"'       { LIT_STRING (Buffer.contents buf) }
+  | '\n'      { new_line lexbuf; Buffer.add_char buf '\n'; read_string buf lexbuf }
+  | '\\' 'n'  { Buffer.add_char buf '\n'; read_string buf lexbuf }
+  | '\\' 'r'  { Buffer.add_char buf '\r'; read_string buf lexbuf }
+  | '\\' 't'  { Buffer.add_char buf '\t'; read_string buf lexbuf }
+  | '\\' ([^'\\' 'n' 'r' 't'] as lxm)
+    { Buffer.add_char buf lxm; read_string buf lexbuf }
+  | [^ '"' '\\']+
+    { Buffer.add_string buf (Lexing.lexeme lexbuf);
+      read_string buf lexbuf
+    }
+  | _         { syntax_error lexbuf }
+  | eof       { raise (Failure("unterminated string")) }
+\end{lstlisting}
+\section{parser.mly}
+\begin{lstlisting}{ocaml}
+/* Ocamlyacc parser for Extend */
+
+%{
+open Ast
+%}
+
+%token LSQBRACK RSQBRACK LPAREN RPAREN LBRACE RBRACE HASH
+%token COLON COMMA QUESTION IF GETS ASN SEMI PRECEDES UNDERSCORE
+%token SWITCH CASE DEFAULT SIZE TYPE ROW COLUMN
+%token PLUS MINUS TIMES DIVIDE MOD POWER LSHIFT RSHIFT
+%token EQ NOTEQ GT LT GTEQ LTEQ
+%token LOGNOT LOGAND LOGOR
+%token BITNOT BITXOR BITAND BITOR
+%token EMPTY RETURN IMPORT GLOBAL EXTERN
+%token DEBUG
+%token <int> LIT_INT
+%token <float> LIT_FLOAT
+%token <string> LIT_STRING
+%token <string> ID
+%token EOF
+
+%right QUESTION
+%left PRECEDES
+%left LOGOR
+%left LOGAND
+%left EQ NOTEQ LT GT LTEQ GTEQ
+%left PLUS MINUS BITOR BITXOR
+%left TIMES DIVIDE MOD LSHIFT RSHIFT BITAND
+%right POWER
+%right BITNOT LOGNOT NEG
+%left LSQBRACK
+
+%start program
+%type <Ast.raw_program> program
+
+%%
+
+program:
+    program_piece EOF {  let (imp, glob, fnc, ext) = $1 in (List.rev imp, List.rev glob, List.rev fnc, List.rev ext) }
+
+program_piece:
+    /* nothing */ {([],[],[],[])}
+  | program_piece import      { let (imp, glob, fnc, ext) = $1 in ($2 :: imp, glob, fnc, ext) }
+  | program_piece global      { let (imp, glob, fnc, ext) = $1 in (imp, $2 :: glob, fnc, ext) }
+  | program_piece func_decl   { let (imp, glob, fnc, ext) = $1 in (imp, glob, $2 :: fnc, ext) }
+  | program_piece extern      { let (imp, glob, fnc, ext) = $1 in (imp, glob, fnc, $2 :: ext) }
+
+import:
+    IMPORT LIT_STRING SEMI {$2}
+
+global:
+    GLOBAL varinit {$2}
+
+extern:
+    EXTERN LIT_STRING LBRACE opt_extern_list RBRACE {(Library($2, $4))}
+
+opt_extern_list:
+    /* nothing */ { [] }
+  | extern_list { List.rev $1 }
+
+extern_list:
+    extern_fn { [$1] }
+  | extern_list extern_fn { $2 :: $1 }
+
+extern_fn:
+    ID LPAREN func_param_list RPAREN SEMI
+    { {
+      extern_fn_name = $1;
+      extern_fn_params = $3;
+      extern_fn_libname = "";
+      extern_ret_val = (None, None);
+    } }
+  | ret_dim ID LPAREN func_param_list RPAREN SEMI
+    { {
+      extern_fn_name = $2;
+      extern_fn_params = $4;
+      extern_fn_libname = "";
+      extern_ret_val = $1;
+    } }
+
+func_decl:
+    ID LPAREN func_param_list RPAREN LBRACE opt_stmt_list ret_stmt RBRACE
+    { {
+      name = $1;
+      params = $3;
+      body = $6;
+      raw_asserts = [];
+      ret_val = ((None, None), $7)
+    } }
+  | ret_dim ID LPAREN func_param_list RPAREN LBRACE opt_stmt_list ret_stmt RBRACE
+    { {
+      name = $2;
+      params = $4;
+      body = $7;
+      raw_asserts = [];
+      ret_val = ($1, $8);
+    } }
+
+opt_stmt_list:
+    /* nothing */ { [] }
+  | stmt_list { List.rev $1 }
+
+stmt_list:
+    stmt { [$1] }
+  | stmt_list stmt { $2 :: $1 }
+
+stmt:
+    varinit { $1 } |  assign { $1 }
+
+ret_stmt:
+    RETURN expr SEMI {$2}
+
+varinit:
+    var_list SEMI { Varinit((None, None), List.rev $1) }
+  | dim var_list SEMI { Varinit($1, List.rev $2) }
+
+var_list:
+    ID varassign { [ ($1, $2)] }
+  | var_list COMMA ID varassign { ($3, $4) :: $1}
+
+varassign:
+    /* nothing */ { None }
+  | GETS expr { Some $2 }
+
+assign:
+    ID lhs_sel ASN expr SEMI { Assign($1, $2, Some $4) }
+
+expr:
+    expr rhs_sel        { Selection($1, $2) }
+  | HASH ID             { Selection(Id($2), (None, None)) }
+  | op_expr             { $1 }
+  | ternary_expr        { $1 }
+  | switch_expr         { $1 }
+  | func_expr           { $1 }
+  | range_expr          { $1 }
+  | DEBUG LPAREN expr RPAREN { Debug($3) }
+  | expr PRECEDES expr  { Precedence($1, $3) }
+  | LPAREN expr RPAREN  { $2 }
+  | ID                  { Id($1) }
+  | LIT_INT             { LitInt($1) }
+  | LIT_FLOAT           { LitFlt($1) }
+  | LIT_STRING          { LitString($1) }
+  | EMPTY               { Empty }
+
+op_expr:
+    expr PLUS expr      { BinOp($1, Plus, $3) }
+  | expr MINUS expr     { BinOp($1, Minus, $3) }
+  | expr TIMES expr     { BinOp($1, Times, $3) }
+  | expr DIVIDE expr    { BinOp($1, Divide, $3) }
+  | expr MOD expr       { BinOp($1, Mod, $3) }
+  | expr POWER expr     { BinOp($1, Pow, $3) }
+  | expr LSHIFT expr    { BinOp($1, LShift, $3) }
+  | expr RSHIFT expr    { BinOp($1, RShift, $3) }
+  | expr LOGAND expr    { BinOp($1, LogAnd, $3) }
+  | expr LOGOR expr     { BinOp($1, LogOr, $3) }
+  | expr BITXOR expr    { BinOp($1, BitXor, $3) }
+  | expr BITAND expr    { BinOp($1, BitAnd, $3) }
+  | expr BITOR expr     { BinOp($1, BitOr, $3) }
+  | expr EQ expr        { BinOp($1, Eq, $3) }
+  | expr NOTEQ expr     { UnOp(LogNot,(BinOp($1, Eq, $3))) }
+  | expr GT expr        { BinOp($1, Gt, $3) }
+  | expr LT expr        { BinOp($1, Lt, $3) }
+  | expr GTEQ expr      { BinOp($1, GtEq, $3) }
+  | expr LTEQ expr      { BinOp($1, LtEq, $3) }
+  | SIZE LPAREN expr RPAREN { UnOp(SizeOf, $3) }
+  | TYPE LPAREN expr RPAREN { UnOp(TypeOf, $3) }
+  | ROW LPAREN RPAREN       { UnOp(Row, Empty)}
+  | COLUMN LPAREN RPAREN    { UnOp(Column, Empty)}
+  | MINUS expr %prec NEG    { UnOp(Neg, $2) }
+  | LOGNOT expr             { UnOp(LogNot, $2) }
+  | BITNOT expr             { UnOp(BitNot, $2) }
+
+ternary_expr:
+    IF LPAREN expr COMMA expr COMMA expr RPAREN { Ternary($3, $5, $7) }
+  | expr QUESTION expr COLON expr %prec QUESTION { Ternary($1, $3, $5) }
+
+switch_expr:
+    SWITCH LPAREN switch_cond RPAREN LBRACE default_case_list RBRACE { Switch($3, fst $6, snd $6) }
+  | SWITCH LBRACE default_case_list RBRACE { Switch(None, fst $3, snd $3) }
+
+switch_cond:
+    /* nothing */ { None }
+  | expr { Some $1 }
+
+default_case_list:
+    case_list {(List.rev $1, Empty)}
+  | case_list default_expr {(List.rev $1, $2)}
+
+case_list:
+    case_stmt { [$1] }
+  | case_list case_stmt { $2 :: $1 }
+
+case_stmt:
+    CASE case_expr_list COLON expr SEMI { (List.rev $2, $4) }
+
+default_expr:
+    DEFAULT COLON expr SEMI { $3 }
+
+case_expr_list:
+    expr { [$1] }
+  | case_expr_list COMMA expr { $3 :: $1 }
+
+func_expr:
+    ID LPAREN opt_arg_list RPAREN { Call($1, $3) }
+
+range_expr:
+    LBRACE row_list RBRACE { allow_range_literal (LitRange(List.rev $2)) }
+
+row_list:
+    col_list {[List.rev $1]}
+  | row_list SEMI col_list {List.rev $3 :: $1}
+
+col_list:
+    expr {[$1]}
+  | col_list COMMA expr {$3 :: $1}
+
+opt_arg_list:
+    /* nothing */ {[]}
+  | arg_list { List.rev $1 }
+
+arg_list:
+    expr {[$1]}
+  | arg_list COMMA expr {$3 :: $1}
+
+lhs_sel:
+    /* nothing */                         { (None, None) }
+/* commented out: LSQBRACK lslice RSQBRACK { (Some $2, None) } */
+  | LSQBRACK lslice COMMA lslice RSQBRACK { (Some $2, Some $4) }
+
+rhs_sel:
+    LSQBRACK rslice RSQBRACK              { (Some $2, None) }
+  | LSQBRACK rslice COMMA rslice RSQBRACK { (Some $2, Some $4) }
+
+lslice:
+  /* commented out: nothing production { (None, None) } */
+    lslice_val                            { (Some $1, None) }
+  | lslice_val COLON lslice_val           { (Some $1, Some $3) }
+  | lslice_val COLON                      { (Some $1, Some DimensionEnd) }
+  | COLON lslice_val                      { (Some DimensionStart, Some $2) }
+  | COLON                                 { (Some DimensionStart, Some DimensionEnd) }
+
+rslice:
+    /* nothing */                         { (None, None) }
+  | rslice_val                            { (Some $1, None) }
+  | rslice_val COLON rslice_val           { (Some $1, Some $3) }
+  | rslice_val COLON                      { (Some $1, Some DimensionEnd) }
+  | COLON rslice_val                      { (Some DimensionStart, Some $2) }
+  | COLON                                 { (Some DimensionStart, Some DimensionEnd) }
+
+lslice_val:
+    expr { Abs($1) }
+
+rslice_val:
+    expr { Abs($1) }
+  | LSQBRACK expr RSQBRACK { Rel($2) }
+
+func_param_list:
+    /* nothing */ { [] }
+  | func_param_int_list { List.rev $1 }
+
+func_param_int_list:
+    func_sin_param { [$1] }
+  | func_param_int_list COMMA func_sin_param { $3 :: $1 }
+
+func_sin_param:
+    ID { ((None, None), $1) }
+  | dim ID { ($1, $2) }
+
+dim:
+    LSQBRACK expr RSQBRACK { (Some $2, None) }
+  | LSQBRACK expr COMMA expr RSQBRACK { (Some $2, Some $4) }
+
+ret_dim:
+    LSQBRACK ret_sin RSQBRACK { ($2, None) }
+  | LSQBRACK ret_sin COMMA ret_sin RSQBRACK { ($2,$4) }
+
+ret_sin:
+    expr { Some $1 }
+  | UNDERSCORE { Some Wild }
+\end{lstlisting}
+\section{ast.ml}
+\begin{lstlisting}{ocaml}
+type op       = Plus | Minus | Times | Divide | Mod | Pow |
+                LShift | RShift | BitOr | BitAnd | BitXor |
+                Eq | Gt | GtEq | Lt | LtEq | LogAnd | LogOr
+type unop     = Neg | LogNot | BitNot | SizeOf | TypeOf | Row | Column | Truthy
+
+type expr     = LitInt of int |
+                LitFlt of float |
+                LitString of string |
+                LitRange of (expr list) list |
+                Id of string |
+                Empty |
+                Wild |
+                BinOp of expr * op * expr |
+                UnOp of unop * expr |
+                Ternary of expr * expr * expr |
+                Switch of expr option * case list * expr |
+                Call of string * expr list |
+                Selection of expr * sel |
+                ReducedTernary of string * string * string |
+                Precedence of expr * expr |
+                Debug of expr
+and  index    = Abs of expr |
+                Rel of expr |
+                DimensionStart |
+                DimensionEnd
+and  slice    = index option * index option
+and  sel      = slice option * slice option
+and  case     = expr list * expr
+
+type dim      = expr option * expr option
+type var      = dim * string
+type assign   = string * sel * expr option
+type init     = string * expr option
+type stmt     = Assign of assign |
+                Varinit of dim * init list
+
+type raw_func = {
+    name: string;
+    params: var list;
+    body: stmt list;
+    raw_asserts: expr list;
+    ret_val: dim * expr;
+}
+
+type extern_func = {
+    extern_fn_name: string;
+    extern_fn_params: var list;
+    extern_fn_libname: string;
+    extern_ret_val: dim;
+}
+
+type library  = Library of string * extern_func list
+type raw_program = string list * stmt list * raw_func list * library list
+
+(* Desugared types below *)
+module StringMap = Map.Make(String)
+type formula  = {
+  formula_row_start: index;
+  formula_row_end: index option;
+  formula_col_start: index;
+  formula_col_end: index option;
+  formula_expr: expr;
+}
+
+type dim_expr = DimInt of int
+              | DimId of string
+
+type variable = {
+  var_rows: dim_expr;
+  var_cols: dim_expr;
+  var_formulas: formula list;
+}
+
+type func_decl = {
+  func_params: var list;
+  func_body: variable StringMap.t;
+  func_asserts: expr list;
+  func_ret_val: dim * expr;
+}
+
+type program = (variable StringMap.t) * (func_decl StringMap.t) * (extern_func StringMap.t)
+
+type listable = Inits of init list |
+                Vars of var list |
+                Stmts of stmt list |
+                RawFuncs of raw_func list |
+                Externs of extern_func list |
+                Libraries of library list |
+                Exprs of expr list |
+                Rows of (expr list) list |
+                Strings of string list |
+                Cases of case list |
+                Formulas of formula list
+
+exception IllegalRangeLiteral of string
+exception TransformedAway of string
+
+let quote_string str =
+  let escape_characters = Str.regexp "[\n \t \r \\ \"]" in
+  let replace_fn s = match Str.matched_string s with
+    "\n" -> "\\n"   |
+    "\t" -> "\\t"   |
+    "\r" -> "\\r"   |
+    "\\" -> "\\\\"  |
+    "\"" -> "\\\""  |
+    _    -> Str.matched_string s in
+  "\"" ^ Str.global_substitute escape_characters replace_fn str ^ "\""
+
+let string_of_op o = "\"" ^ (match o with
+    Plus -> "+" | Minus -> "-" | Times -> "*" | Divide -> "/" | Mod -> "%" | Pow -> "**" |
+    LShift -> "<<" | RShift -> ">>" | BitOr -> "|" | BitAnd -> "&" | BitXor -> "^" |
+    Eq -> "==" | Gt -> ">" | GtEq -> ">=" | Lt -> "<" | LtEq -> "<=" |
+    LogAnd -> "&& " | LogOr -> "||" ) ^ "\""
+
+let string_of_unop = function
+    Neg -> "\"-\"" | LogNot -> "\"!\"" | BitNot -> "\"~\"" | Truthy -> "\"truthy\"" |
+    SizeOf -> "\"size\"" | TypeOf -> "\"type\"" | Row -> "\"row\"" | Column -> "\"column\""
+
+let rec string_of_expr = function
+    LitInt(l) ->          "{\"LitInt\":" ^ string_of_int l ^ "}"
+  | LitFlt(l) ->          "{\"LitFlt\":" ^ string_of_float l ^ "}"
+  | LitString(s) ->       "{\"LitString\":" ^ quote_string s ^ "}"
+  | LitRange(rowlist) ->  "{\"LitRange\": " ^ string_of_list (Rows rowlist) ^ "}"
+  | Id(s) ->              "{\"Id\": " ^ quote_string s ^ "}"
+  | Empty ->              "\"Empty\""
+  | Wild ->               "\"Wild\""
+  | BinOp(e1, o, e2) ->   "{\"BinOp\": {" ^
+                            "\"expr1\": " ^ string_of_expr e1 ^ ", " ^
+                            "\"operator\": " ^ string_of_op o ^ ", " ^
+                            "\"expr2\": " ^ string_of_expr e2 ^ "}}"
+  | UnOp(o, e) ->         "{\"UnOp\": {" ^
+                            "\"operator\": " ^ string_of_unop o ^ ", " ^
+                            "\"expr\": " ^ string_of_expr e ^ "}}"
+  | Ternary(c, e1, e2) -> "{\"Ternary\": {" ^
+                            "\"condition\": " ^ string_of_expr c ^ ", " ^
+                            "\"ifExpr\": " ^ string_of_expr e1 ^ ", " ^
+                          "\"elseExpr\": " ^ string_of_expr e2 ^ "}}"
+  | ReducedTernary(s1, s2, s3) -> "{\"ReducedTernary\": {" ^
+                            "\"truthiness\": " ^ quote_string s1 ^ ", " ^
+                            "\"true_values\": " ^ quote_string s2 ^ ", " ^
+                            "\"false_values\": " ^ quote_string s3 ^ "}}"
+  | Switch(eo, cases, dflt) ->  "{\"Switch\": {" ^
+                                "\"condition\": " ^
+                                  (match eo with None -> "null" | Some e -> string_of_expr e) ^ ", " ^
+                                "\"cases\": " ^ string_of_list (Cases cases) ^ ", " ^
+                                "\"defaultExpr\": " ^ string_of_expr dflt ^ "}}"
+  | Call(f, arguments) -> "{\"Call\": {" ^
+                            "\"function\": " ^ quote_string f ^ ", " ^
+                            "\"arguments\": " ^ string_of_list (Exprs arguments) ^ "}}"
+  | Selection(e, s) ->    "{\"Selection\": {" ^
+                            "\"expr\": " ^ string_of_expr e ^ ", " ^
+                            "\"slices\": " ^ string_of_sel s ^ "}}"
+  | Precedence(e1, e2) -> "{\"Precedence\": { " ^
+                            "\"prior_expr\": " ^ string_of_expr e1 ^ ", " ^
+                          "\"dependent_expr\": " ^ string_of_expr e2 ^ "}}"
+  | Debug(e) -> string_of_expr e
+
+and string_of_case (el, e) =
+    "{\"Cases\": " ^ string_of_list (Exprs el) ^ ", " ^
+     "\"expr\": " ^ string_of_expr e ^ "}"
+
+and string_of_sel (s1, s2) =
+    "{\"slice1\": " ^ string_of_slice s1 ^ ", \"slice2\": " ^ string_of_slice s2 ^ "}"
+
+and string_of_slice = function
+    None -> "null"
+  | Some (start_idx, end_idx) -> "{\"start\": " ^ string_of_index start_idx ^ ", \"end\": " ^ string_of_index end_idx ^ "}"
+
+and string_of_index = function
+    None -> "null"
+  | Some(Abs(e)) -> "{\"Absolute\": " ^ string_of_expr e ^ "}"
+  | Some(Rel(e)) -> "{\"Relative\": " ^ string_of_expr e ^ "}"
+  | Some(DimensionStart) -> "\"DimensionStart\""
+  | Some(DimensionEnd) -> "\"DimensionEnd\""
+
+and string_of_dim (d1,d2) = "{\"d1\": " ^ (match d1 with None -> "null" | Some e -> string_of_expr e) ^ ", " ^
+                             "\"d2\": " ^ (match d2 with None -> "null" | Some e -> string_of_expr e) ^ "}"
+
+and string_of_var (d, s) = "{\"Dimensions\": " ^ string_of_dim d ^ ", " ^
+                            "\"VarName\": " ^ quote_string s ^ "}"
+
+and string_of_assign (s, selection, eo) =
+    "{\"VarName\": " ^ quote_string s ^ ", " ^
+     "\"Selection\": " ^ string_of_sel selection ^ ", " ^
+    "\"expr\": " ^ (match eo with None -> "null" | Some e -> string_of_expr e) ^ "}"
+
+and string_of_varinit (d, inits) =
+  "{\"Dimensions\": " ^ string_of_dim d ^
+    ",\"Initializations\": " ^ string_of_list (Inits inits) ^ "}"
+
+and string_of_init (s, eo) =
+    "{\"VarName\": " ^ quote_string s ^ ", " ^
+     "\"expr\": " ^ (match eo with None -> "null" | Some e -> string_of_expr e) ^ "}"
+
+and string_of_stmt = function
+    Assign(a) -> "{\"Assign\": " ^ string_of_assign a ^ "}"
+  | Varinit(d, inits) -> "{\"Varinit\": " ^ string_of_varinit (d, inits) ^ "}"
+
+and string_of_range (d, e) = "{\"Dimensions\": " ^ string_of_dim d ^ ", " ^
+                              "\"expr\": " ^ string_of_expr e ^ "}"
+
+and string_of_raw_func fd =
+    "{\"Name\": " ^ quote_string fd.name ^ "," ^
+     "\"Params\": " ^ string_of_list (Vars fd.params) ^ "," ^
+     "\"Stmts\": " ^ string_of_list (Stmts fd.body) ^ "," ^
+     "\"Assertions\": " ^ string_of_list (Exprs fd.raw_asserts) ^ "," ^
+     "\"ReturnVal\": " ^ string_of_range fd.ret_val ^ "}"
+
+and string_of_extern_func fd =
+  "{\"Name\": " ^ quote_string fd.extern_fn_name ^ "," ^
+  "\"Params\": " ^ string_of_list (Vars fd.extern_fn_params) ^ "," ^
+  "\"Library\": " ^ quote_string fd.extern_fn_libname ^ "," ^
+  "\"ReturnDim\": " ^ string_of_dim fd.extern_ret_val ^ "}"
+
+and string_of_library (Library(lib_name, lib_fns)) =
+  "{\"LibraryName\": " ^ quote_string lib_name ^ "," ^
+  "\"ExternalFunctions\": " ^ string_of_list (Externs lib_fns) ^ "}"
+
+and string_of_dimexpr = function
+    DimInt(i) -> string_of_int i
+  | DimId(s) -> quote_string s
+
+and string_of_formula f =
+  "{\"RowStart\": " ^ string_of_index (Some f.formula_row_start) ^ "," ^
+  "\"RowEnd\": " ^ string_of_index (f.formula_row_end) ^ "," ^
+  "\"ColumnStart\": " ^ string_of_index (Some f.formula_col_start) ^ "," ^
+  "\"ColumnEnd\": " ^ string_of_index (f.formula_col_end) ^ "," ^
+  "\"Formula\": " ^ string_of_expr f.formula_expr ^ "}"
+
+and string_of_list l =
+  let stringrep = (match l with
+    Inits (il) -> List.map string_of_init il
+  | Vars(vl) -> List.map string_of_var vl
+  | Stmts(sl) -> List.map string_of_stmt sl
+  | RawFuncs(fl) -> List.map string_of_raw_func fl
+  | Externs(efl) -> List.map string_of_extern_func efl
+  | Libraries(libl) -> List.map string_of_library libl
+  | Exprs(el) -> List.map string_of_expr el
+  | Rows(rl) -> List.map (fun (el : expr list) -> string_of_list (Exprs el)) rl
+  | Strings(sl) -> List.map quote_string sl
+  | Cases(cl) -> List.map string_of_case cl
+  | Formulas(fl) -> List.map string_of_formula fl)
+  in "[" ^ String.concat ", " stringrep ^ "]"
+
+let string_of_raw_program (imp, glb, fs, exts) =
+    "{\"Program\": {" ^
+      "\"Imports\": " ^ string_of_list (Strings imp) ^ "," ^
+      "\"Globals\": " ^ string_of_list (Stmts glb) ^ "," ^
+      "\"ExternalLibraries\": " ^ string_of_list (Libraries exts) ^ "," ^
+      "\"Functions\": " ^ string_of_list (RawFuncs fs) ^ "}}"
+
+let string_of_variable v =
+  "{\"Rows\": " ^ string_of_dimexpr v.var_rows ^ "," ^
+  "\"Columns\": " ^ string_of_dimexpr v.var_cols ^ "," ^
+  "\"Formulas\": " ^ string_of_list (Formulas v.var_formulas) ^ "}"
+
+let string_of_map value_desc val_printing_fn m =
+  let f_key_val_list k v l = (
+    "{\"" ^ value_desc ^ "Name\": " ^ quote_string k ^ ", " ^
+    "\"" ^ value_desc ^ "Def\": " ^ val_printing_fn v ^ "}"
+  ) :: l in
+  "[" ^ String.concat ", " (List.rev (StringMap.fold f_key_val_list m [])) ^ "]"
+
+let string_of_funcdecl f =
+  "{\"Params\": " ^ string_of_list (Vars f.func_params) ^ "," ^
+  "\"Variables\": " ^ string_of_map "Variable" string_of_variable f.func_body ^ "," ^
+  "\"Assertions\": " ^ string_of_list (Exprs f.func_asserts) ^ "," ^
+  "\"ReturnVal\": " ^ string_of_range f.func_ret_val ^ "}"
+
+let string_of_program (glb, fs, exts) =
+  "{\"Program\": {" ^
+    "\"Globals\": " ^ string_of_map "Variable" string_of_variable glb ^ "," ^
+    "\"Functions\": " ^ string_of_map "Function" string_of_funcdecl fs ^ "," ^
+    "\"ExternalFunctions\": " ^ string_of_map "ExternalFunctions" string_of_extern_func exts ^ "}}"
+
+let allow_range_literal = function
+    LitRange(rowlist) ->
+      let rec check_range_literal rl =
+        List.for_all (fun exprs -> List.for_all check_basic_expr exprs) rl
+      and check_basic_expr = function
+          LitInt(_) | UnOp(Neg, LitInt(_)) | LitFlt(_) | UnOp(Neg, LitFlt(_)) | LitString(_) | Empty -> true
+        | LitRange(rl) -> check_range_literal rl
+        | _ -> false in
+
+      if check_range_literal rowlist then LitRange(rowlist)
+      else raise(IllegalRangeLiteral(string_of_expr (LitRange(rowlist))))
+  | e -> raise(IllegalRangeLiteral(string_of_expr e))
+\end{lstlisting}
+\section{transform.ml}
+\begin{lstlisting}{ocaml}
+open Ast
+open Lexing
+open Parsing
+
+exception IllegalExpression of string;;
+exception DuplicateDefinition of string;;
+exception UnknownVariable of string;;
+exception UnknownFunction of string;;
+exception WrongNumberArgs of string;;
+exception LogicError of string;;
+
+module StringSet = Set.Make (String);;
+let importSet = StringSet.empty;;
+
+let builtin_signatures = [("cos", 1); ("column", 0); (*("printf", 2);*) ("toString", 1)]
+
+let idgen =
+  (* from http://stackoverflow.com/questions/10459363/side-effects-and-top-level-expressions-in-ocaml*)
+  let count = ref (-1) in
+  fun prefix -> incr count; "_tmp_" ^ prefix ^ string_of_int !count;;
+
+let expand_file filename =
+  let print_error_location filename msg lexbuf =
+    let pos = lexbuf.lex_curr_p in
+    prerr_endline ("Syntax error in \"" ^ filename ^ "\": " ^ msg) ;
+    prerr_endline ("Line " ^ (string_of_int pos.pos_lnum) ^ " at character " ^ (string_of_int (pos.pos_cnum - pos.pos_bol))) in
+
+  let rec expand_imports processed_imports globals fns exts dir = function
+      [] -> ([], globals, fns, exts)
+    | import :: imports ->
+      (* print_endline "--------";
+      print_endline ("Working on: " ^ import) ;
+      print_endline ("Already processed:"); *)
+      (* StringSet.iter (fun a -> print_endline a) processed_imports; *)
+      let in_chan = open_in import in
+      let lexbuf = (Lexing.from_channel (in_chan)) in
+      let (file_imports, file_globals, file_functions, file_externs) =
+        try Parser.program Scanner.token lexbuf
+        with
+          Parsing.Parse_error -> print_error_location import "" lexbuf ; exit(-1)
+        | Scanner.SyntaxError(s) -> print_error_location import s lexbuf ; exit(-1)
+      in
+      let file_imports = List.map (fun file -> dir ^ "/" ^ file) file_imports in
+      let new_proc = StringSet.add import processed_imports and _ = close_in in_chan in
+      (* print_endline ("Now I'm done with: ") ; *)
+      (* StringSet.iter (fun a -> print_endline a) new_proc; *)
+      let first_im_hearing_about imp = not (StringSet.mem imp new_proc || List.mem imp imports) in
+      let new_imports = StringSet.elements (StringSet.of_list (List.filter first_im_hearing_about file_imports)) in
+      (* print_endline ("First I'm hearing about:") ; *)
+      (* List.iter print_endline new_imports; *)
+      expand_imports new_proc (globals @ file_globals) (fns @ file_functions) (exts @ file_externs) (Filename.dirname import) (imports @ new_imports) in
+  expand_imports StringSet.empty [] [] [] (Filename.dirname filename) [filename]
+
+let expand_expressions (imports, globals, functions, externs) =
+  let lit_zero = LitInt(0) in let abs_zero = Abs(lit_zero) in
+  let lit_one  = LitInt(1) in let abs_one  = Abs(lit_one)  in
+  let one_by_one = (Some lit_one, Some lit_one) in
+  let zero_comma_zero = (Some (Some abs_zero, Some abs_one),
+                         Some (Some abs_zero, Some abs_one)) in
+  let entire_dimension = (Some DimensionStart, Some DimensionEnd) in
+  let entire_range = (Some entire_dimension, Some entire_dimension) in
+
+  let expand_expr expr_loc = function
+    (* Create a new variable for all expressions on the LHS to hold the result;
+       return the new expression and whatever new statements are necessary to create the new variable *)
+      Empty     -> raise (IllegalExpression("Empty not allowed in " ^ expr_loc))
+    | Wild      -> raise (IllegalExpression("wild - this shouldn't be possible"))
+    | LitString(s) -> raise (IllegalExpression("String literal " ^ quote_string s ^ " not allowed in " ^ expr_loc))
+    | LitRange(rl) -> raise (IllegalExpression("Range literal " ^ string_of_list (Rows rl) ^ " not allowed in " ^ expr_loc))
+    | e         -> let new_id = idgen expr_loc in (
+        Id(new_id),
+        [Varinit (one_by_one, [(new_id, None)]);
+         Assign (new_id, zero_comma_zero, Some e)]) in
+
+  let expand_index index_loc = function
+    (* Expand one index of a slice if necessary. *)
+      Abs(e) -> let (new_e, new_stmts) = expand_expr index_loc e in
+      (Abs(new_e), new_stmts)
+    | DimensionStart -> (DimensionStart, [])
+    | DimensionEnd -> (DimensionEnd, [])
+    | Rel(_) -> raise (IllegalExpression("relative - this shouldn't be possible")) in
+
+  let expand_slice slice_loc = function
+    (* Expand one or both sides as necessary. *)
+      None -> (entire_dimension, [])
+    | Some (Some (Abs(e)), None) ->
+      let (start_e, start_stmts) = expand_expr (slice_loc ^ "_start") e in
+      ((Some (Abs(start_e)), None), start_stmts)
+    | Some (Some idx_start, Some idx_end) ->
+      let (new_start, new_start_exprs) = expand_index (slice_loc ^ "_start") idx_start in
+      let (new_end, new_end_exprs) = expand_index (slice_loc ^ "_end") idx_end in
+      ((Some new_start, Some new_end), new_start_exprs @ new_end_exprs)
+    | Some (Some _, None) | Some (None, _) -> raise (IllegalExpression("Illegal slice - this shouldn't be possible")) in
+
+  let expand_assign asgn_loc (var_name, (row_slice, col_slice), formula) =
+    (* expand_assign: Take an Assign and return a list of more
+       atomic statements, with new variables replacing any
+       complex expressions in the selection slices and with single
+       index values desugared to expr:expr+1. *)
+    try
+      let (new_row_slice, row_exprs) = expand_slice (asgn_loc ^ "_" ^ var_name ^ "_row") row_slice in
+      let (new_col_slice, col_exprs) = expand_slice (asgn_loc ^ "_" ^ var_name ^ "_col") col_slice in
+      Assign(var_name, (Some new_row_slice, Some new_col_slice), formula) :: (row_exprs @ col_exprs)
+    with IllegalExpression(s) ->
+      raise (IllegalExpression("Illegal expression (" ^ s ^ ") in " ^
+                               string_of_assign (var_name, (row_slice, col_slice), formula))) in
+
+  let expand_init (r, c) (v, e) =
+    Varinit((Some r, Some c), [(v, None)]) ::
+    match e with
+      None -> []
+    | Some e -> [Assign (v, entire_range, Some e)] in
+
+  let expand_dimension dim_loc = function
+      None -> expand_expr dim_loc (LitInt(1))
+    | Some e -> expand_expr dim_loc e in
+
+  let expand_varinit fname ((row_dim, col_dim), inits) =
+    (* expand_varinit: Take a Varinit and return a list of more atomic
+       statements. Each dimension will be given a temporary ID, which
+       will be declared as [1,1] _tmpXXX; the formula for tmpXXX will be
+       set as a separate assignment; the original variable will be
+       declared as [_tmpXXX, _tmpYYY] var; and the formula assignment
+       will be applied to [:,:]. *)
+    try
+      let (row_e, row_stmts) = expand_dimension (fname ^ "_" ^ (String.concat "_" (List.map fst inits)) ^ "_row_dim") row_dim in
+      let (col_e, col_stmts) = expand_dimension (fname ^ "_" ^ (String.concat "_" (List.map fst inits)) ^ "_col_dim") col_dim in
+      row_stmts @ col_stmts @ List.concat (List.map (expand_init (row_e, col_e)) inits)
+    with IllegalExpression(s) ->
+      raise (IllegalExpression("Illegal expression (" ^ s ^ ") in " ^
+                               string_of_varinit ((row_dim, col_dim), inits))) in
+
+  let expand_stmt fname = function
+    Assign(a) -> expand_assign fname a
+  | Varinit(d, inits) -> expand_varinit fname (d, inits) in
+
+  let expand_stmt_list fname stmts = List.concat (List.map (expand_stmt fname) stmts) in
+
+  let expand_params fname params =
+    let needs_sizevar = function
+        ((None, None), _) -> false
+      | _ -> true in
+    let params_with_sizevar = List.map (fun x -> (idgen (fname ^ "_" ^ (snd x) ^ "_size"), x)) (List.filter needs_sizevar params) in
+    let expanded_args = List.map (fun (sv, ((rv, cv), s)) -> ((sv, s), [((sv, abs_zero), rv); ((sv, abs_one), cv)])) params_with_sizevar in
+    let (sizes, inits) = (List.map fst expanded_args, List.concat (List.map snd expanded_args)) in
+    let add_item (varset, (assertlist, initlist)) ((sizevar, pos), var) =
+      (match var with
+         Some Id(s) ->
+         if StringSet.mem s varset then
+           (* We've seen this variable before; don't initialize it, just assert it *)
+           (varset, (BinOp(Id(s), Eq, Selection(Id(sizevar), (Some(Some(pos), None), None))) :: assertlist, initlist))
+         else
+           (* We're seeing a string for the first time; don't assert it, just create it *)
+           (StringSet.add s varset, (assertlist,
+                                     Assign(s, zero_comma_zero, Some (Selection(Id(sizevar), (Some(Some(pos), None), None)))) ::
+                                     Varinit(one_by_one, [(s, None)]) ::
+                                     initlist))
+       | Some LitInt(i) -> (* Seeing a number; don't do anything besides create an assertion *)
+         (varset, (BinOp(LitInt(i), Eq, Selection(Id(sizevar), (Some(Some(pos), None), None))) :: assertlist, initlist))
+       | Some e -> raise (IllegalExpression("Illegal expression (" ^ string_of_expr e ^ ") in function signature"))
+       | _ -> raise (IllegalExpression("Cannot supply a single dimension in function signature"))) in
+    let (rev_assertions, rev_inits) = snd (List.fold_left add_item (StringSet.empty, ([], [])) inits) in
+    let create_sizevar (sizevar,arg) = [
+      Varinit(one_by_one, [(sizevar, None)]);
+      Assign(sizevar, entire_range, Some(UnOp(SizeOf,Id(arg))))] in
+    (List.concat (List.map create_sizevar sizes), List.rev rev_assertions, List.rev rev_inits) in
+
+  let expand_function f =
+    let (new_sizevars, assertions, size_inits) = expand_params f.name f.params in
+    let new_retval_id = idgen (f.name ^ "_retval") in
+    let new_retval = Id(new_retval_id) in
+    let retval_inits = [Varinit (one_by_one, [(new_retval_id, None)]);
+                        Assign (new_retval_id, zero_comma_zero, Some (snd f.ret_val))] in
+    {
+      name = f.name;
+      params = f.params;
+      raw_asserts = assertions;
+      body = new_sizevars @ size_inits @ retval_inits @ expand_stmt_list f.name f.body;
+      ret_val = (fst f.ret_val, new_retval)
+    } in
+  (imports, expand_stmt_list "global" globals, List.map expand_function functions, externs);;
+
+let map_of_list list_of_tuples =
+  (*  map_of_list: Take a list of the form [("foo", 2); ("bar", 3)]
+      and create a StringMap using the first value of the tuple as
+      the key and the second value of the tuple as the value. Raises
+      an exception if the key appears more than once in the list. *)
+  let rec aux acc = function
+      [] -> acc
+    | t :: ts ->
+      if (StringMap.mem (fst t) acc) then raise(DuplicateDefinition(fst t))
+      else aux (StringMap.add (fst t) (snd t) acc) ts in
+  aux StringMap.empty list_of_tuples
+
+let create_maps (imports, globals, functions, externs) =
+  let vd_of_vi = function
+    (*  vd_of_vi--- Take a bare Varinit from the previous transformations
+        and return a (string, variable) pair    *)
+      Varinit((Some r, Some c), [(v, None)]) -> (v, {
+        var_rows = (match r with
+              LitInt(i) -> DimInt(i)
+            | Id(s) -> DimId(s)
+            | _ -> raise (LogicError("Unrecognized expression for rows of " ^ v)));
+        var_cols = (match c with
+              LitInt(i) -> DimInt(i)
+            | Id(s) -> DimId(s)
+            | _ -> raise (LogicError("Unrecognized expression for rows of " ^ v)));
+        var_formulas = [];
+      })
+    | _ -> raise (LogicError("Unrecognized format for post-desugaring Varinit")) in
+
+  let add_formula m = function
+       Varinit(_,_) -> m
+     | Assign(var_name, (Some (Some row_start, row_end), Some (Some col_start, col_end)), Some e) ->
+       if StringMap.mem var_name m
+       then (let v = StringMap.find var_name m in
+             StringMap.add var_name {v with var_formulas = v.var_formulas @ [{
+                 formula_row_start = row_start;
+                 formula_row_end = row_end;
+                 formula_col_start = col_start;
+                 formula_col_end = col_end;
+                 formula_expr = e;
+               }]} m)
+       else raise (UnknownVariable(string_of_stmt (Assign(var_name, (Some (Some row_start, row_end), Some (Some col_start, col_end)), Some e))))
+     | Assign(a) -> raise (LogicError("Unrecognized format for post-desugaring Assign: " ^ string_of_stmt (Assign(a)))) in
+
+  let vds_of_stmts stmts =
+    let is_varinit = function Varinit(_,_) -> true | _ -> false in
+    let varinits = List.filter is_varinit stmts in
+    let vars_just_the_names = map_of_list (List.map vd_of_vi varinits) in
+    List.fold_left add_formula vars_just_the_names stmts in
+
+  let fd_of_raw_func f = (f.name, {
+      func_params = f.params;
+      func_body = vds_of_stmts f.body;
+      func_ret_val = f.ret_val;
+      func_asserts = f.raw_asserts;
+    }) in
+
+  let tupleize_library (Library(lib_name, lib_fns)) =
+    List.map (fun ext_fn -> (ext_fn.extern_fn_name, {ext_fn with extern_fn_libname = lib_name})) lib_fns in
+
+  (vds_of_stmts globals,
+   map_of_list (List.map fd_of_raw_func functions),
+   map_of_list (List.concat (List.map tupleize_library externs)))
+
+let single_formula e = {
+  formula_row_start = DimensionStart;
+  formula_row_end = Some DimensionEnd;
+  formula_col_start = DimensionStart;
+  formula_col_end = Some DimensionEnd;
+  formula_expr = e;
+}
+
+let ternarize_exprs (globals, functions, externs) =
+  let rec ternarize_expr lhs_var = function
+      BinOp(e1, LogAnd, e2) ->
+      let (new_e1, new_e1_vars) = ternarize_expr lhs_var e1 in
+      let (new_e2, new_e2_vars) = ternarize_expr lhs_var e2 in
+      (Ternary(UnOp(Truthy,new_e1), UnOp(Truthy,new_e2), LitInt(0)), new_e1_vars @ new_e2_vars)
+    | BinOp(e1, LogOr, e2) ->
+      let (new_e1, new_e1_vars) = ternarize_expr lhs_var e1 in
+      let (new_e2, new_e2_vars) = ternarize_expr lhs_var e2 in
+      (Ternary(UnOp(Truthy,new_e1), LitInt(1), UnOp(Truthy,new_e2)), new_e1_vars @ new_e2_vars)
+    | BinOp(e1, op, e2) ->
+      let (new_e1, new_e1_vars) = ternarize_expr lhs_var e1 in
+      let (new_e2, new_e2_vars) = ternarize_expr lhs_var  e2 in
+      (BinOp(new_e1, op, new_e2), new_e1_vars @ new_e2_vars)
+    | UnOp(op, e) ->
+      let (new_e, new_e_vars) = ternarize_expr lhs_var e in
+      (UnOp(op, new_e), new_e_vars)
+    | Ternary(cond, e1, e2) ->
+      let (new_cond, new_cond_vars) = ternarize_expr lhs_var cond in
+      let (new_e1, new_e1_vars) = ternarize_expr lhs_var e1 in
+      let (new_e2, new_e2_vars) = ternarize_expr lhs_var e2 in
+      (Ternary(new_cond, new_e1, new_e2), new_cond_vars @ new_e1_vars @ new_e2_vars)
+    | Call(fname, args) ->
+      let new_args_and_vars = List.map (ternarize_expr lhs_var) args in
+      (Call(fname, (List.map fst new_args_and_vars)), List.concat (List.map snd new_args_and_vars))
+    | Selection(e, (sl1, sl2)) ->
+      let (new_e, new_e_vars) = ternarize_expr lhs_var e in
+      let (new_sl1, new_sl1_vars) = ternarize_slice lhs_var sl1 in
+      let (new_sl2, new_sl2_vars) = ternarize_slice lhs_var sl2 in
+      (Selection(new_e, (new_sl1, new_sl2)), new_e_vars @ new_sl1_vars @ new_sl2_vars)
+    | Precedence(e1, e2) ->
+      let (new_e1, new_e1_vars) = ternarize_expr lhs_var e1 in
+      let (new_e2, new_e2_vars) = ternarize_expr lhs_var e2 in
+      (Precedence(new_e1, new_e2), new_e1_vars @ new_e2_vars)
+    | Switch(cond, cases, dflt) ->
+      ternarize_switch lhs_var cases dflt cond
+    | LitRange(rowlist) -> let (lhs_varname, _) = lhs_var in formulize_litrange lhs_varname rowlist
+    | Debug(e) ->
+      let (new_e, new_e_vars) = ternarize_expr lhs_var e in
+      (Debug(new_e), new_e_vars)
+    | e -> (e, [])
+  and formulize_litrange lhs_varname rowlist =
+    let new_range_id = idgen (lhs_varname ^ "_litrange") in
+    let num_rows = List.length rowlist in
+    let num_cols = List.fold_left max 0 (List.map List.length rowlist) in
+    let formulize_expr r c = function
+        LitRange(rl) -> formulize_litrange (new_range_id ^ "_" ^ string_of_int r ^ "_" ^ string_of_int c) rl
+      | e -> (e, []) in
+    let formulize_row rownum col_exprs =
+      let col_formulas_and_vars = List.mapi (fun c e -> formulize_expr rownum c e) col_exprs in
+      let create_formula colnum e = {
+        formula_row_start = Abs(LitInt(rownum)); formula_row_end = None;
+        formula_col_start = Abs(LitInt(colnum)); formula_col_end = None;
+        formula_expr = e;
+      } in
+      (List.mapi create_formula (List.map fst col_formulas_and_vars), List.concat (List.map snd col_formulas_and_vars)) in
+    let formulas_and_vars = List.mapi formulize_row rowlist in
+    let range_var = {
+      var_rows = DimInt(num_rows); var_cols = DimInt(num_cols);
+      var_formulas = List.concat (List.map fst formulas_and_vars);
+    } in
+    (Id(new_range_id),
+     (new_range_id, range_var) ::
+     List.concat (List.map snd formulas_and_vars))
+  and ternarize_switch lhs_var cases dflt cond =
+    let (new_cond_expr, new_cond_vars) = (match cond with
+          Some cond_expr ->
+          let (lhs_varname, lhs_vardef) = lhs_var in
+          let new_id = idgen (lhs_varname ^ "_switch_cond") in
+          let (new_e, new_e_vars) = ternarize_expr lhs_var cond_expr in
+          (Some (Selection(Id(new_id),(Some(Some(Rel(LitInt(0))),None),Some(Some(Rel(LitInt(0))),None)))),
+           (new_id, {lhs_vardef with var_formulas = [single_formula new_e]}) ::
+           new_e_vars)
+        | None ->
+          (None,[])
+    ) in
+    let new_cases_and_vars = List.map (ternarize_case lhs_var new_cond_expr) cases in
+    let new_cases = List.map fst new_cases_and_vars in
+    let new_case_vars = List.concat (List.map snd new_cases_and_vars) in
+    let (new_dflt, new_dflt_vars) = ternarize_expr lhs_var dflt in
+    let rec combine_everything = function
+        [] -> new_dflt
+      | (combined_cases, e) :: more_cases -> Ternary(combined_cases, e, combine_everything more_cases) in
+    (combine_everything new_cases, new_cond_vars @ new_case_vars @ new_dflt_vars)
+  and ternarize_case lhs_var cond (conds, e) =
+    let new_conds_and_vars = List.map (ternarize_expr lhs_var) conds in
+    let new_conds = List.map fst new_conds_and_vars in
+    let new_cond_vars = List.concat (List.map snd new_conds_and_vars) in
+    let (new_e, new_e_vars) = ternarize_expr lhs_var e in
+    let unify_case_cond_and_switch_cond case_cond = function
+        None -> case_cond
+      | Some switch_cond -> BinOp(switch_cond,Eq,case_cond) in
+    let rec unify_switch_cond_and_case_conds switch_cond = function
+        [case_cond] -> unify_case_cond_and_switch_cond case_cond switch_cond
+      | case_cond :: case_conds ->
+        let (combined_expr, _) = ternarize_expr lhs_var
+            (BinOp(unify_case_cond_and_switch_cond case_cond switch_cond, LogOr, unify_switch_cond_and_case_conds switch_cond case_conds)) in
+        combined_expr
+      | [] -> raise(LogicError("Empty case condition list")) in
+    ((unify_switch_cond_and_case_conds cond new_conds, new_e),new_cond_vars @ new_e_vars)
+  and ternarize_slice lhs_var = function
+      None -> (None, [])
+    | Some (i1, i2) ->
+      let (new_i1, new_i1_vars) = ternarize_index lhs_var i1 in
+      let (new_i2, new_i2_vars) = ternarize_index lhs_var i2 in
+      (Some (new_i1, new_i2), new_i1_vars @ new_i2_vars)
+  and ternarize_index lhs_var = function
+      Some Abs(e) ->
+      let (new_e, new_e_vars) = ternarize_expr lhs_var e in
+      (Some(Abs(new_e)), new_e_vars)
+    | Some Rel(e) ->
+      let (new_e, new_e_vars) = ternarize_expr lhs_var e in
+      (Some(Rel(new_e)), new_e_vars)
+    | i -> (i, []) in
+  let ternarize_formula lhs_var f =
+    let (new_expr, new_vars) = ternarize_expr lhs_var f.formula_expr in
+    ({f with formula_expr = new_expr}, new_vars) in
+  let ternarize_variable varname vardef =
+    let new_formulas_and_vars = List.map (ternarize_formula (varname, vardef)) vardef.var_formulas in
+    ({vardef with var_formulas = List.map fst new_formulas_and_vars}, List.concat (List.map snd new_formulas_and_vars)) in
+  let ternarize_variables fn_name m =
+    let new_variables_and_maps = StringMap.mapi (fun varname vardef -> ternarize_variable (fn_name ^ "_" ^ varname) vardef) m in
+    let add_item var_name (orig_var, new_vars) l = ((var_name, orig_var) :: fst l, new_vars :: snd l) in
+    let combined_list = StringMap.fold add_item new_variables_and_maps ([],[]) in
+    map_of_list (List.rev (fst combined_list) @ List.concat (snd combined_list)) in
+  let ternarize_function fn_name fn_def = {fn_def with func_body = ternarize_variables fn_name fn_def.func_body} in
+  (ternarize_variables "global" globals, StringMap.mapi ternarize_function functions, externs)
+
+let reduce_ternaries (globals, functions, externs) =
+  let rec reduce_expr lhs_var = function
+    | BinOp(e1, op, e2) ->
+      let (new_e1, new_e1_vars) = reduce_expr lhs_var e1 in
+      let (new_e2, new_e2_vars) = reduce_expr lhs_var  e2 in
+      (BinOp(new_e1, op, new_e2), new_e1_vars @ new_e2_vars)
+    | UnOp(op, e) ->
+      let (new_e, new_e_vars) = reduce_expr lhs_var e in
+      (UnOp(op, new_e), new_e_vars)
+    | Ternary(cond, e1, e2) -> reduce_ternary lhs_var cond e1 e2
+    | Call(fname, args) ->
+      let new_args_and_vars = List.map (reduce_expr lhs_var) args in
+      (Call(fname, (List.map fst new_args_and_vars)), List.concat (List.map snd new_args_and_vars))
+    | Selection(e, (sl1, sl2)) ->
+      let (new_e, new_e_vars) = reduce_expr lhs_var e in
+      let (new_sl1, new_sl1_vars) = reduce_slice lhs_var sl1 in
+      let (new_sl2, new_sl2_vars) = reduce_slice lhs_var sl2 in
+      (Selection(new_e, (new_sl1, new_sl2)), new_e_vars @ new_sl1_vars @ new_sl2_vars)
+    | Precedence(e1, e2) ->
+      let (new_e1, new_e1_vars) = reduce_expr lhs_var e1 in
+      let (new_e2, new_e2_vars) = reduce_expr lhs_var e2 in
+      (Precedence(new_e1, new_e2), new_e1_vars @ new_e2_vars)
+    | Debug(e) ->
+      let (new_e, new_e_vars) = reduce_expr lhs_var e in
+      (Debug(new_e), new_e_vars)
+    | e -> (e, [])
+  and reduce_ternary lhs_var cond e1 e2 =
+    let (new_cond, new_cond_vars) = reduce_expr lhs_var cond in
+    let (new_true_e, new_true_vars) = reduce_expr lhs_var e1 in
+    let (new_false_e, new_false_vars) = reduce_expr lhs_var e2 in
+    let (lhs_varname, lhs_vardef) = lhs_var in
+    let new_cond_id = idgen (lhs_varname ^ "_truthiness") in
+    let new_true_id = idgen (lhs_varname ^ "_values_if_true") in
+    let new_false_id = idgen (lhs_varname ^ "_values_if_false") in
+    (ReducedTernary(new_cond_id, new_true_id, new_false_id),
+     (new_cond_id, {lhs_vardef with var_formulas = [single_formula (UnOp(Truthy,new_cond))]}) ::
+     (new_true_id, {lhs_vardef with var_formulas = [single_formula new_true_e]}) ::
+     (new_false_id, {lhs_vardef with var_formulas = [single_formula new_false_e]}) ::
+     (new_cond_vars @ new_true_vars @ new_false_vars))
+  and reduce_slice lhs_var = function
+      None -> (None, [])
+    | Some (i1, i2) ->
+      let (new_i1, new_i1_vars) = reduce_index lhs_var i1 in
+      let (new_i2, new_i2_vars) = reduce_index lhs_var i2 in
+      (Some (new_i1, new_i2), new_i1_vars @ new_i2_vars)
+  and reduce_index lhs_var = function
+      Some Abs(e) ->
+      let (new_e, new_e_vars) = reduce_expr lhs_var e in
+      (Some(Abs(new_e)), new_e_vars)
+    | Some Rel(e) ->
+      let (new_e, new_e_vars) = reduce_expr lhs_var e in
+      (Some(Rel(new_e)), new_e_vars)
+    | i -> (i, []) in
+  let reduce_formula lhs_var f =
+    let (new_expr, new_vars) = reduce_expr lhs_var f.formula_expr in
+    ({f with formula_expr = new_expr}, new_vars) in
+  let reduce_variable varname vardef =
+    let new_formulas_and_vars = List.map (reduce_formula (varname, vardef)) vardef.var_formulas in
+    ({vardef with var_formulas = List.map fst new_formulas_and_vars}, List.concat (List.map snd new_formulas_and_vars)) in
+  let reduce_variables fn_name m =
+    let new_variables_and_maps = StringMap.mapi (fun varname vardef -> reduce_variable (fn_name ^ "_" ^ varname) vardef) m in
+    let add_item var_name (orig_var, new_vars) l = ((var_name, orig_var) :: fst l, new_vars :: snd l) in
+    let combined_list = StringMap.fold add_item new_variables_and_maps ([],[]) in
+    map_of_list (List.rev (fst combined_list) @ List.concat (snd combined_list)) in
+  let reduce_function fn_name fn_def = {fn_def with func_body = reduce_variables fn_name fn_def.func_body} in
+  (reduce_variables "global" globals, StringMap.mapi reduce_function functions, externs)
+
+let check_semantics (globals, functions, externs) =
+  let fn_signatures = map_of_list
+      (builtin_signatures @
+       (StringMap.fold (fun s f l -> (s, List.length f.func_params) :: l) functions []) @
+       (StringMap.fold (fun s f l -> (s, List.length f.extern_fn_params) :: l) externs [])) in
+  let check_function fname f =
+    if StringMap.mem fname externs then raise(DuplicateDefinition(fname ^ "() is defined as both an external and local function")) else ();
+    let locals = f.func_body in
+    let params = List.map snd f.func_params in
+    List.iter
+      (fun param ->
+         if StringMap.mem param locals then raise(DuplicateDefinition(param ^ " is defined multiple times in " ^ fname ^ "()"))
+         else ())
+      params ;
+    let check_call called_fname num_args =
+      match called_fname with
+          "printf" -> ()
+        | _ -> if (not (StringMap.mem called_fname fn_signatures)) then raise(UnknownFunction(called_fname))
+            else let signature_args = StringMap.find called_fname fn_signatures in
+            if num_args != signature_args then raise(WrongNumberArgs(
+                "In " ^ fname ^ "(), the function " ^ called_fname ^ "() was called with " ^ string_of_int num_args ^ " arguments " ^
+                "but the signature specifies " ^ string_of_int signature_args
+              ))
+            else () in
+    let rec check_expr = function
+        BinOp(e1,_,e2) -> check_expr e1 ; check_expr e2
+      | UnOp(_, e) -> check_expr e
+      | Ternary(cond, e1, e2) -> check_expr cond ; check_expr e1 ; check_expr e2
+      | ReducedTernary(s1, s2, s3) -> check_expr (Id(s1)) ; check_expr (Id(s2)) ; check_expr (Id(s3))
+      | Id(s) -> if (List.mem s params || StringMap.mem s locals || StringMap.mem s globals) then () else raise(UnknownVariable(fname ^ "(): " ^ s))
+      | Switch(Some e, cases, dflt) -> check_expr e ; List.iter check_case cases ; check_expr dflt
+      | Switch(None, cases, dflt) -> List.iter check_case cases ; check_expr dflt
+      | Call(called_fname, args) ->
+        check_call called_fname (List.length args) ;
+        List.iter check_expr args
+      | Selection(e, (sl1, sl2)) -> check_expr e ; check_slice sl1 ; check_slice sl2
+      | Precedence(e1, e2) -> check_expr e1 ; check_expr e2
+      | Debug(e) -> check_expr e;
+      | LitInt(_) | LitFlt(_) | LitRange(_) | LitString(_) | Empty | Wild -> ()
+    and check_case (conds, e) = List.iter check_expr conds ; check_expr e
+    and check_slice = function
+        None -> ()
+      | Some (i1, i2) -> check_index i1 ; check_index i2
+    and check_index = function
+        Some Abs(e) -> check_expr e
+      | Some Rel(e) -> check_expr e
+      | _ -> () in
+    let check_formula f =
+      check_index (Some f.formula_row_start) ;
+      check_index f.formula_row_end ;
+      check_index (Some f.formula_col_start) ;
+      check_index f.formula_col_end ;
+      check_expr f.formula_expr in
+    let check_dim = function
+        DimInt(1) -> ()
+      | DimInt(i) -> raise(IllegalExpression("This is not going to work right"))
+      | DimId(s) -> check_expr (Id(s)) in
+    let check_variable v =
+      check_dim v.var_rows ;
+      check_dim v.var_cols ;
+      List.iter check_formula v.var_formulas in
+
+    StringMap.iter (fun _ v -> check_variable v) f.func_body ;
+    check_expr (snd f.func_ret_val)
+
+  in StringMap.iter check_function functions
+
+let create_ast filename =
+  let ast_imp_res = expand_file filename in
+  let ast_expanded = expand_expressions ast_imp_res in
+  let ast_mapped = create_maps ast_expanded in check_semantics ast_mapped ;
+  let ast_ternarized = ternarize_exprs ast_mapped in
+  let ast_reduced = reduce_ternaries ast_ternarized in check_semantics ast_reduced ;
+  ast_reduced
+\end{lstlisting}
+\section{codegen.ml}
+\begin{lstlisting}{ocaml}
+(* Extend code generator *)
+
+open Ast
+open CodeGenTypes
+exception NotImplemented
+exception LogicError of string
+
+type symbol = LocalVariable of int | GlobalVariable of int | FunctionParameter of int | ExtendFunction of int
+and  symbolTable = symbol StringMap.t
+and  symbolTableType = Locals | Globals | ExtendFunctions
+
+let helper_functions = Hashtbl.create 10
+let runtime_functions = Hashtbl.create 20
+
+let index_map table_type m =
+  let add_item key _ (accum_map, accum_idx) =
+    let index_val = match table_type with Locals -> LocalVariable(accum_idx) | Globals -> GlobalVariable(accum_idx) | ExtendFunctions -> ExtendFunction(accum_idx) in
+    (StringMap.add key index_val accum_map, accum_idx + 1) in
+  StringMap.fold add_item m (StringMap.empty, 0)
+
+let (=>) struct_ptr elem = (fun val_name builder ->
+    let the_pointer = Llvm.build_struct_gep struct_ptr elem "the_pointer" builder in
+    Llvm.build_load the_pointer val_name builder);;
+
+(* from http://stackoverflow.com/questions/243864/what-is-the-ocaml-idiom-equivalent-to-pythons-range-function without the infix *)
+let zero_until i =
+  let rec aux n acc =
+    if n < 0 then acc else aux (n-1) (n :: acc)
+  in aux (i-1) []
+
+let create_runtime_functions ctx bt the_module =
+  let add_runtime_func fname returntype arglist =
+    let the_func = Llvm.declare_function fname (Llvm.function_type returntype arglist) the_module
+    in Hashtbl.add runtime_functions fname the_func in
+  add_runtime_func "strlen" bt.long_t [|bt.char_p|];
+  add_runtime_func "strcmp" bt.long_t [|bt.char_p; bt.char_p|];
+  add_runtime_func "pow" bt.float_t [|bt.float_t; bt.float_t|] ;
+  add_runtime_func "lrint" bt.int_t [|bt.float_t|] ;
+  add_runtime_func "llvm.memcpy.p0i8.p0i8.i64" bt.void_t [|bt.char_p; bt.char_p; bt.long_t; bt.int_t; bt.bool_t|] ;
+  add_runtime_func "getVal" bt.value_p [|bt.var_instance_p; bt.int_t; bt.int_t|] ;
+  add_runtime_func "clone_value" bt.value_p [|bt.value_p;|] ;
+  (* add_runtime_func "freeMe" (Llvm.void_type ctx) [|bt.extend_scope_p;|] ; *)
+  add_runtime_func "getSize" bt.value_p [|bt.var_instance_p;|] ;
+  add_runtime_func "get_variable" bt.var_instance_p [|bt.extend_scope_p; bt.int_t|] ;
+  add_runtime_func "null_init" (Llvm.void_type ctx) [|bt.extend_scope_p|] ;
+  add_runtime_func "debug_print" (Llvm.void_type ctx) [|bt.value_p ; bt.char_p|] ;
+  add_runtime_func "new_string_go_all_the_way" bt.value_p [|bt.char_p|] ;
+  ()
+
+let create_helper_functions ctx bt the_module =
+  let create_def_bod fname rtype argtypes =
+    let fn_def = Llvm.define_function fname (Llvm.function_type rtype (Array.of_list argtypes)) the_module in
+    let fn_bod = Llvm.builder_at_end ctx (Llvm.entry_block fn_def) in
+    (fn_def, fn_bod) in
+
+  (* let create_is_subrange_1x1 fname =
+    let is_index_one fn builder idx =
+      let the_value = ((Llvm.param fn 0) => (subrange_field_index idx)) "the_value" builder in
+      let the_bool = Llvm.build_icmp Llvm.Icmp.Eq the_value (Llvm.const_int bt.int_t 1) "the_bool" builder in
+      the_bool in
+    let (fn_def, fn_bod) = create_def_bod fname bt.bool_t [bt.subrange_p] in
+    let one_row = is_index_one fn_def fn_bod SubrangeRows in
+    let one_col = is_index_one fn_def fn_bod SubrangeCols in
+    let one_by_one = Llvm.build_and one_row one_col "one_by_one" fn_bod in
+    let _ = Llvm.build_ret one_by_one fn_bod in
+    Hashtbl.add helper_functions fname fn_def in
+ *)
+  let create_new_string fname =
+    let (fn_def, fn_bod) = create_def_bod fname bt.string_p [bt.char_p] in
+    let the_string_ptr = Llvm.build_malloc bt.string_t "the_string_ptr" fn_bod in
+    let src_char_ptr = Llvm.param fn_def 0 in
+    let dst_char_ptr_ptr = Llvm.build_struct_gep the_string_ptr (string_field_index StringCharPtr) "dst_char_ptr_ptr" fn_bod in
+    let string_len = Llvm.build_call (Hashtbl.find runtime_functions "strlen") [|src_char_ptr|] "string_len" fn_bod in
+    let extra_byte = Llvm.build_add string_len (Llvm.const_int bt.long_t 1) "extra_byte" fn_bod in
+    let strlen_ptr = Llvm.build_struct_gep the_string_ptr (string_field_index StringLen) "strlen_ptr" fn_bod in
+    let refcount_ptr = Llvm.build_struct_gep the_string_ptr (string_field_index StringRefCount) "refcount" fn_bod in
+    let dst_char_ptr = Llvm.build_array_malloc bt.char_t extra_byte "dst_char_ptr" fn_bod in
+    let _ = Llvm.build_store dst_char_ptr dst_char_ptr_ptr fn_bod in
+    let _ = Llvm.build_call (Hashtbl.find runtime_functions "llvm.memcpy.p0i8.p0i8.i64")
+        [| dst_char_ptr ; src_char_ptr ; extra_byte ; (Llvm.const_int bt.int_t 0) ; (Llvm.const_int bt.bool_t 0) |]
+        "" fn_bod in
+    let _ = Llvm.build_store string_len strlen_ptr fn_bod in
+    let _ = Llvm.build_store (Llvm.const_int bt.int_t 1) refcount_ptr fn_bod in
+    let _ = Llvm.build_ret the_string_ptr fn_bod in
+    Hashtbl.add helper_functions fname fn_def in
+
+  (* let create_box_native_string_list fname =
+    let (fn_def, fn_bod) = create_def_bod fname bt.string_p_p [bt.int_t; bt.char_p_p] in
+    let argc = Llvm.param fn_def 0 in
+    let argv = Llvm.param fn_def 1 in
+    let ret_val = Llvm.build_array_malloc bt.string_p argc "ret_val" fn_bod in
+    let i_ptr = Llvm.build_alloca bt.int_t "i_ptr" fn_bod in
+    let _ = Llvm.build_store (Llvm.const_int bt.int_t 0) i_ptr fn_bod in (* i = 0; *)
+    let pred_bb = Llvm.append_block ctx "while_pred" fn_def in
+    let body_bb = Llvm.append_block ctx "while_body" fn_def in
+    let merge_bb = Llvm.append_block ctx "merge" fn_def in
+    let _ = Llvm.build_br pred_bb fn_bod in
+    let pred_builder = Llvm.builder_at_end ctx pred_bb in
+    let i_val = Llvm.build_load i_ptr "i" pred_builder in
+    let pred_bool = Llvm.build_icmp Llvm.Icmp.Slt i_val argc "i_lt_argc" pred_builder in (* i < argc *)
+    let _ = Llvm.build_cond_br pred_bool body_bb merge_bb pred_builder in
+    let body_builder = Llvm.builder_at_end ctx body_bb in
+    let i_val = Llvm.build_load i_ptr "i" body_builder in
+    let argv_i_addr = Llvm.build_in_bounds_gep argv [|i_val|] "argv_i_addr" body_builder in
+    let argv_i = Llvm.build_load argv_i_addr "argv_i" body_builder in
+    let ns_ptr = Llvm.build_call (Hashtbl.find helper_functions "new_string") [|argv_i|] "ns_ptr" body_builder in
+    let dst = Llvm.build_in_bounds_gep ret_val [|i_val|] "dst" body_builder in
+    let _ = Llvm.build_store ns_ptr dst body_builder in
+    let i_plus_1 = Llvm.build_add i_val (Llvm.const_int bt.int_t 1) "i_plus_1" body_builder in
+    let _ = Llvm.build_store i_plus_1 i_ptr body_builder in
+    let _ = Llvm.build_br pred_bb body_builder in
+    let merge_builder = Llvm.builder_at_end ctx merge_bb in
+    let _ = Llvm.build_ret ret_val merge_builder in
+    Hashtbl.add helper_functions fname fn_def in *)
+
+  let create_box_value_string fname =
+    let (fn_def, fn_bod) = create_def_bod fname bt.value_p [bt.string_p] in
+    let str = Llvm.param fn_def 0 in
+    let ret_val = Llvm.build_malloc bt.value_t "" fn_bod in
+    let sp = Llvm.build_struct_gep ret_val (value_field_index String) "str_pointer" fn_bod in
+    let _ = Llvm.build_store (Llvm.const_int bt.char_t (value_field_flags_index String)) (Llvm.build_struct_gep ret_val (value_field_index Flags) "" fn_bod) fn_bod in
+    let _ = Llvm.build_store str sp fn_bod in
+    let _ = Llvm.build_ret ret_val fn_bod in
+    Hashtbl.add helper_functions fname fn_def in
+
+  (* let create_box_value_float fname =
+    let (fn_def, fn_bod) = create_def_bod fname bt.value_p [bt.float_t] in
+    let str = Llvm.param fn_def 0 in
+    let ret_val = Llvm.build_malloc bt.value_t "" fn_bod in
+    let sp = Llvm.build_struct_gep ret_val (value_field_index Number) "num_pointer" fn_bod in
+    let _ = Llvm.build_store (Llvm.const_int bt.char_t (value_field_flags_index Number)) (Llvm.build_struct_gep ret_val (value_field_index Flags) "" fn_bod) fn_bod in
+    let _ = Llvm.build_store str sp fn_bod in
+    let _ = Llvm.build_ret ret_val fn_bod in
+    Hashtbl.add helper_functions fname fn_def in *)
+
+
+  (* let create_box_single_value fname =
+    let (fn_def, fn_bod) = create_def_bod fname bt.subrange_p [bt.value_p] in
+    let value = Llvm.param fn_def 0 in
+    let subrange = Llvm.build_malloc bt.subrange_t "" fn_bod in
+    let var_instance = Llvm.build_malloc bt.var_instance_t "" fn_bod in
+    let rp = Llvm.build_struct_gep subrange (subrange_field_index BaseRangePtr) "range_p" fn_bod in
+    let vp = Llvm.build_struct_gep var_instance (var_instance_field_index Values) "value_p" fn_bod in
+    let _ = Llvm.build_store value vp fn_bod in
+    let _ = Llvm.build_store var_instance rp fn_bod in
+    let _ = Llvm.build_store (Llvm.const_int bt.int_t 0) (Llvm.build_struct_gep subrange (subrange_field_index BaseOffsetCol) "" fn_bod) fn_bod in
+    let _ = Llvm.build_store (Llvm.const_int bt.int_t 0) (Llvm.build_struct_gep subrange (subrange_field_index BaseOffsetRow) "" fn_bod) fn_bod in
+    let _ = Llvm.build_store (Llvm.const_int bt.int_t 1) (Llvm.build_struct_gep subrange (subrange_field_index SubrangeRows) "" fn_bod) fn_bod in
+    let _ = Llvm.build_store (Llvm.const_int bt.int_t 1) (Llvm.build_struct_gep subrange (subrange_field_index SubrangeCols) "" fn_bod) fn_bod in
+    let _ = Llvm.build_store (Llvm.const_int bt.int_t 1) (Llvm.build_struct_gep var_instance (var_instance_field_index Rows) "" fn_bod) fn_bod in
+    let _ = Llvm.build_store (Llvm.const_int bt.int_t 1) (Llvm.build_struct_gep var_instance (var_instance_field_index Cols) "" fn_bod) fn_bod in
+    let _ = Llvm.build_ret subrange fn_bod in
+    Hashtbl.add helper_functions fname fn_def in *)
+
+    (* create_is_subrange_1x1 "is_subrange_1x1"; *)
+    (*create_get_val "get_val";
+    create_deref_subrange "deref_subrange";*)
+    create_new_string "new_string";
+    (* create_box_native_string_list "box_native_string_list"; *)
+    create_box_value_string "box_value_string";
+    (* create_box_single_value "box_single_value"; *)
+    (* create_box_value_float "box_value_float";  *)
+    ()
+
+let translate (globals, functions, externs) =
+
+  (* LLVM Boilerplate *)
+  let context = Llvm.global_context () in
+  let base_module = Llvm.create_module context "Extend" in
+  let base_types = setup_types context in
+
+  (* Declare the runtime functions that we need to call *)
+  create_runtime_functions context base_types base_module ;
+  create_helper_functions context base_types base_module ;
+
+  (* Build function_llvalues, which is a StringMap from function name to llvalue.
+   * It includes both functions from external libraries, such as the standard library,
+   * and functions declared within Extend. *)
+  let declare_library_function fname func accum_map =
+    let llvm_ftype = Llvm.function_type base_types.value_p (Array.of_list (List.map (fun a -> base_types.value_p) func.extern_fn_params)) in
+    let llvm_fn = Llvm.declare_function fname llvm_ftype base_module in
+    StringMap.add fname llvm_fn accum_map in
+  let library_functions = StringMap.fold declare_library_function externs StringMap.empty in
+  let define_user_function fname func =
+    let llvm_fname = "extend_" ^ fname in
+    let llvm_ftype = Llvm.function_type base_types.value_p (Array.of_list (List.map (fun a -> base_types.value_p) func.func_params)) in
+    let llvm_fn = Llvm.define_function llvm_fname llvm_ftype base_module in
+    (func, llvm_fn) in
+  let extend_functions = StringMap.mapi define_user_function functions in
+  let function_llvalues = StringMap.fold StringMap.add (StringMap.map snd extend_functions) library_functions in
+
+  (* Build the global symbol table *)
+  let (global_symbols, num_globals) = index_map Globals globals in
+  let (extend_fn_numbers, num_extend_fns) = index_map ExtendFunctions extend_functions in
+
+  (* Create the global array that will hold each function's array of var_defns. *)
+  let vardefn_ptr = Llvm.const_pointer_null base_types.var_defn_p in
+  let vardefn_array = Array.make (StringMap.cardinal extend_functions) vardefn_ptr in
+  let array_of_vardefn_ptrs = Llvm.define_global "array_of_vardefn_ptrs" (Llvm.const_array base_types.var_defn_p vardefn_array) base_module in
+
+  (* Create the pointer to the global scope object *)
+  let global_scope_loc = Llvm.define_global "global_scope_loc" (Llvm.const_pointer_null base_types.extend_scope_p) base_module in
+
+  let main_def = Llvm.define_function "main" (Llvm.function_type base_types.int_t [|base_types.int_t; base_types.char_p_p|]) base_module in
+  let main_bod = Llvm.builder_at_end context (Llvm.entry_block main_def) in
+
+  (* Create the array of value_ps that will contain the responses to TypeOf(val) *)
+  let null_val_ptr = Llvm.const_pointer_null base_types.value_p in
+  let null_val_array = Array.make (Array.length int_to_type_array) null_val_ptr in
+  let array_of_typeof_val_ptrs = Llvm.define_global "array_of_val_ptrs" (Llvm.const_array base_types.value_p null_val_array) base_module in
+  let create_typeof_string i s =
+    let sp = Llvm.build_global_stringptr s "global_typeof_stringptr" main_bod in
+    let vp = Llvm.build_call (Hashtbl.find runtime_functions "new_string_go_all_the_way") [|sp|] "global_typeof_string" main_bod in
+    let vp_dst = Llvm.build_in_bounds_gep array_of_typeof_val_ptrs [|Llvm.const_int base_types.int_t 0; Llvm.const_int base_types.int_t i|] ("global_typeof_dst") main_bod in
+    let _ = Llvm.build_store vp vp_dst main_bod in
+    () in
+  Array.iteri create_typeof_string int_to_type_array ;
+
+  (* Look these two up once and for all *)
+  (* let deepCopy = Hashtbl.find runtime_functions "deepCopy" in *)
+  (* let freeMe = Hashtbl.find runtime_functions "freeMe" in *)
+  let getVal = Hashtbl.find runtime_functions "getVal" in (*getVal retrieves the value of a variable instance for a specific x and y*)
+  let getVar = Hashtbl.find runtime_functions "get_variable" in (*getVar retrieves a variable instance based on the offset. It instanciates the variable if it does not exist yet*)
+
+  (* build_formula_function takes a symbol table and an expression, builds the LLVM function, and returns the llvalue of the function *)
+  let build_formula_function (varname, formula_idx) symbols formula_expr =
+    let form_decl = Llvm.define_function ("formula_fn_" ^ varname ^ "_num_" ^ (string_of_int formula_idx)) base_types.formula_call_t base_module in
+    let builder_at_top = Llvm.builder_at_end context (Llvm.entry_block form_decl) in
+    let local_scope = Llvm.param form_decl 0 in
+    let global_scope = Llvm.build_load global_scope_loc "global_scope" builder_at_top in
+
+    (* Some repeated stuff to avoid cut & paste *)
+    let empty_type = (Llvm.const_int base_types.char_t (value_field_flags_index Empty)) in
+    let number_type = (Llvm.const_int base_types.char_t (value_field_flags_index Number)) in
+    let string_type = (Llvm.const_int base_types.char_t (value_field_flags_index String)) in
+    let range_type = (Llvm.const_int base_types.char_t (value_field_flags_index Range)) in
+    let make_block blockname =
+      let new_block = Llvm.append_block context blockname form_decl in
+      let new_builder = Llvm.builder_at_end context new_block in
+      (new_block, new_builder) in
+    let store_number value_ptr store_builder number_llvalue =
+      let sp = Llvm.build_struct_gep value_ptr (value_field_index Number) "num_pointer" store_builder in
+      let _ = Llvm.build_store number_type (Llvm.build_struct_gep value_ptr (value_field_index Flags) "" store_builder) store_builder in
+      ignore (Llvm.build_store number_llvalue sp store_builder) in
+    let store_empty value_ptr store_builder =
+      ignore (Llvm.build_store empty_type (Llvm.build_struct_gep value_ptr (value_field_index Flags) "" store_builder) store_builder) in
+
+    let make_truthiness_blocks blockprefix ret_val =
+      let (merge_bb, merge_builder) = make_block (blockprefix ^ "_merge") in
+
+      let (make_true_bb, make_true_builder) = make_block (blockprefix ^ "_true") in
+      let _ = store_number ret_val make_true_builder (Llvm.const_float base_types.float_t 1.0) in
+      let _ = Llvm.build_br merge_bb make_true_builder in
+
+      let (make_false_bb, make_false_builder) = make_block (blockprefix ^ "_false") in
+      let _ = store_number ret_val make_false_builder (Llvm.const_float base_types.float_t 0.0) in
+      let _ = Llvm.build_br merge_bb make_false_builder in
+
+      let (make_empty_bb, make_empty_builder) = make_block (blockprefix ^ "_empty") in
+      let _ = store_empty ret_val make_empty_builder  in
+      let _ = Llvm.build_br merge_bb make_empty_builder in
+
+      (make_true_bb, make_false_bb, make_empty_bb, merge_builder) in
+
+    let rec build_expr old_builder exp = match exp with
+        LitInt(i) -> let vvv = Llvm.const_float base_types.float_t (float_of_int i) in
+        let ret_val = Llvm.build_malloc base_types.value_t "int_ret_val" old_builder in
+        let _ = store_number ret_val old_builder vvv in
+        (ret_val, old_builder)
+      | LitFlt(f) -> let vvv = Llvm.const_float base_types.float_t f in
+        let ret_val = Llvm.build_malloc base_types.value_t "flt_ret_val" old_builder in
+        let _ = store_number ret_val old_builder vvv in
+        (ret_val, old_builder)
+      | Empty ->
+        let ret_val = Llvm.build_malloc base_types.value_t "empty_ret_val" old_builder in
+        let _ = store_empty ret_val old_builder in
+        (ret_val, old_builder)
+      | Debug(e) ->
+        let (ret_val, new_builder) = build_expr old_builder e in
+        let _ = Llvm.build_call (Hashtbl.find runtime_functions "debug_print") [|ret_val; Llvm.const_pointer_null base_types.char_p|] "" new_builder in
+        (ret_val, new_builder)
+      | Id(name) ->
+        (
+          match (try StringMap.find name symbols with Not_found -> raise(LogicError("Something went wrong with your semantic analysis - " ^ name ^ " not found"))) with
+            LocalVariable(i) ->
+            let llvm_var = Llvm.build_call getVar [|local_scope; Llvm.const_int base_types.int_t i|] "llvm_var" old_builder in
+            (Llvm.build_call getVal [|llvm_var; Llvm.const_int base_types.int_t 0; Llvm.const_int base_types.int_t 0|] "local_id_ret_val" old_builder, old_builder)
+          | GlobalVariable(i) ->
+            let llvm_var = Llvm.build_call getVar [|global_scope; Llvm.const_int base_types.int_t i|] "llvm_var" old_builder in
+            (Llvm.build_call getVal [|llvm_var; Llvm.const_int base_types.int_t 0; Llvm.const_int base_types.int_t 0|] "global_id_ret_val" old_builder, old_builder)
+          | FunctionParameter(i) ->
+            let paramarray = (local_scope => (scope_field_type_index FunctionParams)) "paramarray" old_builder in
+            let param_addr = Llvm.build_in_bounds_gep paramarray [|Llvm.const_int base_types.int_t i|] "param_addr" old_builder in
+            let param = Llvm.build_load param_addr "param" old_builder in
+            (Llvm.build_call (Hashtbl.find runtime_functions "clone_value") [|param|] "function_param_ret_val" old_builder, old_builder)
+          | ExtendFunction(i) -> raise(LogicError("Something went wrong with your semantic analyis - function " ^ name ^ " used as variable in RHS for " ^ varname))
+        )
+      | Selection(expr, sel) -> build_expr old_builder expr
+      | Precedence(a,b) -> let (_, new_builder) = build_expr old_builder a in build_expr new_builder b
+      | LitString(str) ->
+        let boxxx = Llvm.build_call
+            (Hashtbl.find helper_functions "new_string")
+            (Array.of_list [
+                Llvm.build_global_stringptr str "glob_str" old_builder
+              ]) "boxed_str" old_builder in
+        let boxx = Llvm.build_call
+            (Hashtbl.find helper_functions "box_value_string")
+            (Array.of_list [boxxx]) "box_value_str" old_builder
+        in (boxx, old_builder)
+      | Call(fn,exl) -> (*TODO: Call needs to be reviewed. Possibly switch call arguments to value_p*)
+        let build_one_expr (arg_list, intermediate_builder) e =
+          let (arg_val, next_builder) = build_expr intermediate_builder e in
+          (arg_val :: arg_list, next_builder) in
+        let (reversed_arglist, call_builder) = List.fold_left build_one_expr ([], old_builder) exl in
+        let args = Array.of_list (List.rev reversed_arglist) in
+        let result = Llvm.build_call (
+          StringMap.find fn function_llvalues
+          ) args "call_ret_val" call_builder in
+        (result, call_builder)
+      | BinOp(expr1,op,expr2) -> (
+          let (val1, builder1) = build_expr old_builder expr1 in
+          let (val2, int_builder) = build_expr builder1 expr2 in
+          let bit_shift = (Llvm.const_int base_types.char_t 4) in
+          let expr1_type = (val1 => (value_field_index Flags)) "expr1_type" int_builder in
+          let expr2_type = (val2 => (value_field_index Flags)) "expr2_type" int_builder in
+          let expr1_type_shifted = Llvm.build_shl expr1_type bit_shift "expr_1_type_shifted" int_builder in
+          let combined_type = Llvm.build_add expr1_type_shifted expr2_type "combined_type" int_builder in
+          let number_number = Llvm.const_add (Llvm.const_shl number_type bit_shift) number_type in
+          let string_string = Llvm.const_add (Llvm.const_shl string_type bit_shift) string_type in
+          let empty_empty = Llvm.const_add (Llvm.const_shl empty_type bit_shift) empty_type in
+          let range_range = Llvm.const_add (Llvm.const_shl range_type bit_shift) range_type in
+          let build_simple_binop oppp int_builder =
+            (let ret_val = Llvm.build_malloc base_types.value_t "binop_minus_ret_val" int_builder in
+              let _ = Llvm.build_store
+                  (
+                    Llvm.const_int
+                    base_types.char_t
+                    (value_field_flags_index Empty)
+                  ) (
+                    Llvm.build_struct_gep
+                    ret_val
+                    (value_field_index Flags)
+                    ""
+                    int_builder
+                  )
+                  int_builder
+              in
+              let bailout = (Llvm.append_block context "" form_decl) in
+              let bbailout = Llvm.builder_at_end context bailout in
+              let (numnum_bb, numnum_builder) = make_block "numnum" in
+              let numeric_val_1 = (val1 => (value_field_index Number)) "number_one" numnum_builder in
+              let numeric_val_2 = (val2 => (value_field_index Number)) "number_two" numnum_builder in
+              let numeric_res = oppp numeric_val_1 numeric_val_2 "numeric_res" numnum_builder in
+              let _ = Llvm.build_store
+                  numeric_res (
+                    Llvm.build_struct_gep
+                    ret_val
+                    (value_field_index Number)
+                    ""
+                    numnum_builder
+                  )
+                  numnum_builder in
+              let _ = Llvm.build_store
+                  (
+                    Llvm.const_int
+                    base_types.char_t
+                    (value_field_flags_index Number)
+                  ) (
+                    Llvm.build_struct_gep
+                    ret_val
+                    (value_field_index Flags)
+                    ""
+                    numnum_builder
+                  )
+                  numnum_builder in
+              let _ = Llvm.build_br bailout numnum_builder in
+              let _ = Llvm.build_cond_br (Llvm.build_icmp Llvm.Icmp.Eq combined_type number_number "" int_builder) numnum_bb bailout int_builder in
+               (ret_val, bbailout)
+           )
+           and build_simple_int_binop oppp int_builder =
+             (let ret_val = Llvm.build_malloc base_types.value_t "binop_minus_ret_val" int_builder in
+               let _ = Llvm.build_store
+                   (
+                     Llvm.const_int
+                     base_types.char_t
+                     (value_field_flags_index Empty)
+                   ) (
+                     Llvm.build_struct_gep
+                     ret_val
+                     (value_field_index Flags)
+                     ""
+                     int_builder
+                   )
+                   int_builder
+               in
+               let bailout = (Llvm.append_block context "" form_decl) in
+               let bbailout = Llvm.builder_at_end context bailout in
+               let (numnum_bb, numnum_builder) = make_block "numnum" in
+               let roundfl x = Llvm.build_call (Hashtbl.find runtime_functions "lrint") [|x|] "" numnum_builder in
+               let numeric_val_1 = roundfl ((val1 => (value_field_index Number)) "number_one" numnum_builder) in
+               let numeric_val_2 = roundfl ((val2 => (value_field_index Number)) "number_two" numnum_builder) in
+               let numeric_res = oppp numeric_val_1 numeric_val_2 "numeric_res" numnum_builder in
+               let _ = Llvm.build_store
+                   (Llvm.build_sitofp numeric_res base_types.float_t "" numnum_builder)
+                   (
+                     Llvm.build_struct_gep
+                     ret_val
+                     (value_field_index Number)
+                     ""
+                     numnum_builder
+                   )
+                   numnum_builder in
+               let _ = Llvm.build_store
+                   (
+                     Llvm.const_int
+                     base_types.char_t
+                     (value_field_flags_index Number)
+                   ) (
+                     Llvm.build_struct_gep
+                     ret_val
+                     (value_field_index Flags)
+                     ""
+                     numnum_builder
+                   )
+                   numnum_builder in
+               let _ = Llvm.build_br bailout numnum_builder in
+               let _ = Llvm.build_cond_br (Llvm.build_icmp Llvm.Icmp.Eq combined_type number_number "" int_builder) numnum_bb bailout int_builder in
+                (ret_val, bbailout)
+             ) in
+          let build_boolean_op numeric_comparator string_comparator int_builder =
+            let ret_val = Llvm.build_malloc base_types.value_t "binop_gt_ret_val" int_builder in
+            let (make_true_bb, make_false_bb, make_empty_bb, merge_builder) = make_truthiness_blocks "binop_eq" ret_val in
+
+            let (numnum_bb, numnum_builder) = make_block "numnum" in
+            let numeric_val_1 = (val1 => (value_field_index Number)) "number_one" numnum_builder in
+            let numeric_val_2 = (val2 => (value_field_index Number)) "number_two" numnum_builder in
+            let numeric_greater = Llvm.build_fcmp numeric_comparator numeric_val_1 numeric_val_2 "numeric_greater" numnum_builder in
+            let _ = Llvm.build_cond_br numeric_greater make_true_bb make_false_bb numnum_builder in
+
+            let (strstr_bb, strstr_builder) = make_block "strstr" in
+            let str_p_1 = (val1 => (value_field_index String)) "string_one" strstr_builder in
+            let str_p_2 = (val2 => (value_field_index String)) "string_two" strstr_builder in
+            let char_p_1 = (str_p_1 => (string_field_index StringCharPtr)) "char_p_one" strstr_builder in
+            let char_p_2 = (str_p_2 => (string_field_index StringCharPtr)) "char_p_two" strstr_builder in
+            let strcmp_result = Llvm.build_call (Hashtbl.find runtime_functions "strcmp") [|char_p_1; char_p_2|] "strcmp_result" strstr_builder in
+            let string_greater = Llvm.build_icmp string_comparator strcmp_result (Llvm.const_null base_types.long_t) "string_greater" strstr_builder in
+            let _ = Llvm.build_cond_br string_greater make_true_bb make_false_bb strstr_builder in
+
+            let switch_inst = Llvm.build_switch combined_type make_empty_bb 2 int_builder in (* Incompatible ===> default to empty *)
+            Llvm.add_case switch_inst number_number numnum_bb;
+            Llvm.add_case switch_inst string_string strstr_bb;
+            (ret_val, merge_builder) in
+          match op with
+            Minus -> build_simple_binop Llvm.build_fsub int_builder
+          | Plus ->
+              let result = Llvm.build_malloc base_types.value_t "" int_builder
+              and stradd = (Llvm.append_block context "" form_decl)
+              and numadd = (Llvm.append_block context "" form_decl)
+              and bailout = (Llvm.append_block context "" form_decl)
+              and numorstrorother = (Llvm.append_block context "" form_decl)
+              and strorother = (Llvm.append_block context "" form_decl)
+              in
+              let bstradd = Llvm.builder_at_end context stradd
+              and bnumadd = Llvm.builder_at_end context numadd
+              and bnumorstrorother = Llvm.builder_at_end context numorstrorother
+              and bstrorother = Llvm.builder_at_end context strorother
+              and bbailout = Llvm.builder_at_end context bailout
+              and _ = Llvm.build_store
+                  (
+                    Llvm.const_int
+                    base_types.char_t
+                    (value_field_flags_index Empty)
+                  ) (
+                    Llvm.build_struct_gep
+                    result
+                    (value_field_index Flags)
+                    ""
+                    int_builder
+                  )
+                  int_builder
+              in
+              (*let _ = Llvm.build_cond_br pred_bool body_bb merge_bb pred_builder in*)
+              let isnumber = Llvm.build_icmp
+                  Llvm.Icmp.Eq
+                  (
+                    Llvm.build_load
+                    (
+                      Llvm.build_struct_gep
+                      val1
+                      (value_field_index Flags)
+                      ""
+                      bnumorstrorother
+                    ) "" bnumorstrorother
+                  ) (
+                    Llvm.const_int
+                    base_types.char_t
+                    (value_field_flags_index Number)
+                  )
+                  ""
+                  bnumorstrorother
+              and isstring = Llvm.build_icmp
+                  Llvm.Icmp.Eq
+                  (
+                    Llvm.build_load
+                    (
+                      Llvm.build_struct_gep
+                      val1
+                      (value_field_index Flags)
+                      ""
+                      bstrorother
+                    )
+                    ""
+                    bstrorother
+                  ) (
+                    Llvm.const_int
+                    base_types.char_t
+                    (value_field_flags_index String)
+                  )
+                  ""
+                  bstrorother
+              and isnumorstring = Llvm.build_icmp
+                  Llvm.Icmp.Eq
+                  (
+                    Llvm.build_load
+                    (
+                      Llvm.build_struct_gep
+                      val1
+                      (value_field_index Flags)
+                      ""
+                      int_builder
+                    )
+                    ""
+                    int_builder
+                  ) (
+                    Llvm.build_load
+                    (
+                      Llvm.build_struct_gep
+                      val2
+                      (value_field_index Flags)
+                      ""
+                      int_builder
+                    )
+                    ""
+                    int_builder
+                  )
+                  ""
+                  int_builder
+              and _ = Llvm.build_store (
+                  Llvm.build_fadd
+                  (
+                    Llvm.build_load
+                    (
+                      Llvm.build_struct_gep
+                      val1
+                      (value_field_index Number)
+                      ""
+                      bnumadd
+                    )
+                    ""
+                    bnumadd
+                  ) (
+                    Llvm.build_load
+                    (
+                      Llvm.build_struct_gep
+                      val2
+                      (value_field_index Number)
+                      ""
+                      bnumadd
+                    )
+                    ""
+                    bnumadd
+                  )
+                  ""
+                  bnumadd
+                ) (
+                  Llvm.build_struct_gep
+                  result
+                  (value_field_index Number)
+                  ""
+                  bnumadd
+                )
+                bnumadd
+              and _ = Llvm.build_store (
+                  Llvm.const_int base_types.char_t (value_field_flags_index Number)
+                ) (
+                  Llvm.build_struct_gep
+                  result
+                  (value_field_index Flags)
+                  ""
+                  bnumadd
+                )
+                bnumadd
+              and str1 = Llvm.build_load
+              (
+                Llvm.build_struct_gep
+                val1
+                (value_field_index String)
+                ""
+                bstradd
+              ) "" bstradd
+              and str2 = Llvm.build_load
+              (
+                Llvm.build_struct_gep
+                val2
+                (value_field_index String)
+                ""
+                bstradd
+              ) "" bstradd
+              and newstr =
+              (
+                Llvm.build_malloc base_types.string_t "" bstradd
+              )
+              in
+              let len1 = Llvm.build_load (
+                Llvm.build_struct_gep
+                str1
+                (string_field_index StringLen)
+                ""
+                bstradd
+              ) "" bstradd
+              and len2 = Llvm.build_load (
+                Llvm.build_struct_gep
+                str2
+                (string_field_index StringLen)
+                ""
+                bstradd
+              ) "" bstradd
+              and p1 = Llvm.build_load (
+                Llvm.build_struct_gep
+                str1
+                (string_field_index StringCharPtr)
+                ""
+                bstradd
+              ) "" bstradd
+              and p2 = Llvm.build_load (
+                Llvm.build_struct_gep
+                str2
+                (string_field_index StringCharPtr)
+                ""
+                bstradd
+              ) "" bstradd
+              and dst_char_ptr_ptr = (
+                Llvm.build_struct_gep
+                newstr
+                (string_field_index StringCharPtr)
+                ""
+                bstradd
+              )
+              and _ = Llvm.build_store (
+                Llvm.const_int base_types.char_t (value_field_flags_index String)
+              ) (
+                Llvm.build_struct_gep
+                result
+                (value_field_index Flags)
+                ""
+                bstradd
+              ) bstradd
+              and _ = Llvm.build_store newstr (
+                Llvm.build_struct_gep
+                result
+                (value_field_index String)
+                ""
+                bstradd
+              )
+              bstradd in
+              let fullLen = Llvm.build_nsw_add (Llvm.build_nsw_add len1 len2 "" bstradd) (Llvm.const_int base_types.long_t 1) "" bstradd
+              and extra_byte2 = (Llvm.build_add len2 (Llvm.const_int base_types.long_t 1) "" bstradd) in
+              let dst_char = Llvm.build_array_malloc base_types.char_t (Llvm.build_trunc fullLen base_types.int_t "" bstradd) "" bstradd in
+              let dst_char2 = Llvm.build_in_bounds_gep dst_char [|len1|] "" bstradd in
+              let _ = Llvm.build_call
+                (Hashtbl.find runtime_functions "llvm.memcpy.p0i8.p0i8.i64")
+                [|dst_char; p1; len1; (Llvm.const_int base_types.int_t 0); (Llvm.const_int base_types.bool_t 0)|]
+                ""
+                bstradd
+              and _ = Llvm.build_call
+                (Hashtbl.find runtime_functions "llvm.memcpy.p0i8.p0i8.i64")
+                [|dst_char2; p2; extra_byte2; (Llvm.const_int base_types.int_t 0); (Llvm.const_int base_types.bool_t 0)|]
+                ""
+                bstradd
+              and _ = Llvm.build_store dst_char dst_char_ptr_ptr bstradd
+              in
+              let _ = Llvm.build_store (Llvm.build_nsw_add fullLen (Llvm.const_int base_types.long_t (-1)) "" bstradd) (Llvm.build_struct_gep newstr (string_field_index StringLen) "" bstradd) bstradd
+              in
+              let _ = Llvm.build_cond_br isnumorstring numorstrorother bailout int_builder
+              and _ = Llvm.build_cond_br isnumber numadd strorother bnumorstrorother
+              and _ = Llvm.build_cond_br isstring stradd bailout bstrorother
+              and _ = Llvm.build_br bailout bstradd
+              and _ = Llvm.build_br bailout bnumadd
+              in
+              (result, bbailout)
+          | Times -> build_simple_binop Llvm.build_fmul int_builder
+          | Eq ->
+            (* let _ = Llvm.build_call (Hashtbl.find runtime_functions "debug_print") [|val1; Llvm.build_global_stringptr "Eq operator - value 1" "" old_builder|] "" int_builder in
+            let _ = Llvm.build_call (Hashtbl.find runtime_functions "debug_print") [|val2; Llvm.build_global_stringptr "Eq operator - value 2" "" old_builder|] "" int_builder in *)
+            let ret_val = Llvm.build_malloc base_types.value_t "binop_eq_ret_val" int_builder in
+            let (make_true_bb, make_false_bb, _, merge_builder) = make_truthiness_blocks "binop_eq" ret_val in
+
+            let (numnum_bb, numnum_builder) = make_block "numnum" in
+            let numeric_val_1 = (val1 => (value_field_index Number)) "number_one" numnum_builder in
+            let numeric_val_2 = (val2 => (value_field_index Number)) "number_two" numnum_builder in
+            let numeric_equality = Llvm.build_fcmp Llvm.Fcmp.Oeq numeric_val_1 numeric_val_2 "numeric_equality" numnum_builder in
+            let _ = Llvm.build_cond_br numeric_equality make_true_bb make_false_bb numnum_builder in
+
+            let (strstr_bb, strstr_builder) = make_block "strstr" in
+            let str_p_1 = (val1 => (value_field_index String)) "string_one" strstr_builder in
+            let str_p_2 = (val2 => (value_field_index String)) "string_two" strstr_builder in
+            let char_p_1 = (str_p_1 => (string_field_index StringCharPtr)) "char_p_one" strstr_builder in
+            let char_p_2 = (str_p_2 => (string_field_index StringCharPtr)) "char_p_two" strstr_builder in
+            let strcmp_result = Llvm.build_call (Hashtbl.find runtime_functions "strcmp") [|char_p_1; char_p_2|] "strcmp_result" strstr_builder in
+            let string_equality = Llvm.build_icmp Llvm.Icmp.Eq strcmp_result (Llvm.const_null base_types.long_t) "string_equality" strstr_builder in
+            let _ = Llvm.build_cond_br string_equality make_true_bb make_false_bb strstr_builder in
+
+            let (rngrng_bb, rngrng_builder) = make_block "rngrng" in
+            (* TODO: Make this case work *)
+            let _ = Llvm.build_br make_false_bb rngrng_builder in
+
+            let switch_inst = Llvm.build_switch combined_type make_false_bb 4 int_builder in (* Incompatible ===> default to false *)
+            Llvm.add_case switch_inst number_number numnum_bb;
+            Llvm.add_case switch_inst string_string strstr_bb;
+            Llvm.add_case switch_inst range_range rngrng_bb;
+            Llvm.add_case switch_inst empty_empty make_true_bb; (* Nothing to check in this case, just return true *)
+            (ret_val, merge_builder)
+          | Gt -> build_boolean_op Llvm.Fcmp.Ogt Llvm.Icmp.Sgt int_builder
+          | GtEq -> build_boolean_op Llvm.Fcmp.Oge Llvm.Icmp.Sge int_builder
+          | Lt -> build_boolean_op Llvm.Fcmp.Olt Llvm.Icmp.Slt int_builder
+          | LtEq -> build_boolean_op Llvm.Fcmp.Ole Llvm.Icmp.Sle int_builder
+          | LogAnd | LogOr -> raise (TransformedAway("&& and || should have been transformed into a short-circuit ternary expression! Error in the following expression:\n" ^ string_of_expr exp))
+          | Divide-> build_simple_binop Llvm.build_fdiv int_builder
+          | Mod-> build_simple_binop Llvm.build_frem int_builder
+          | Pow-> (
+            let powcall numeric_val_1 numeric_val_2 valname b =
+              Llvm.build_call (Hashtbl.find runtime_functions "pow") [|numeric_val_1; numeric_val_2|] "" b in
+            build_simple_binop powcall int_builder)
+          | LShift-> build_simple_int_binop Llvm.build_shl int_builder
+          | RShift-> build_simple_int_binop Llvm.build_lshr int_builder
+          | BitOr-> build_simple_int_binop Llvm.build_or int_builder
+          | BitAnd-> build_simple_int_binop Llvm.build_and int_builder
+          | BitXor-> build_simple_int_binop Llvm.build_xor int_builder
+        )
+      | UnOp(SizeOf,expr) -> let vvv = Llvm.const_float base_types.float_t 0.0 in
+        let ret_val = Llvm.build_malloc base_types.value_t "unop_size_ret_val" old_builder in
+        let sp = Llvm.build_struct_gep ret_val (value_field_index Number) "num_pointer" old_builder in
+        let _ = Llvm.build_store (Llvm.const_int base_types.char_t (value_field_flags_index Number)) (Llvm.build_struct_gep ret_val (value_field_index Flags) "" old_builder) old_builder in
+        let _ = Llvm.build_store vvv sp old_builder in
+        (ret_val, old_builder)
+      | UnOp(Truthy, expr) ->
+        let ret_val = Llvm.build_malloc base_types.value_t "unop_truthy_ret_val" old_builder in
+        let (expr_val, expr_builder) = build_expr old_builder expr in
+
+        let (truthy_bb, falsey_bb, empty_bb, merge_builder) = make_truthiness_blocks "binop_eq" ret_val in
+
+        let expr_flags = (expr_val => (value_field_index Flags)) "expr_flags" expr_builder in
+        let is_empty_bool = (Llvm.build_icmp Llvm.Icmp.Eq expr_flags (Llvm.const_int base_types.flags_t (value_field_flags_index Empty)) "is_empty_bool" expr_builder) in
+        let is_empty = Llvm.build_zext is_empty_bool base_types.char_t "is_empty" expr_builder in
+        let is_empty_two = Llvm.build_shl is_empty (Llvm.const_int base_types.char_t 1) "is_empty_two" expr_builder in
+        let is_number = Llvm.build_icmp Llvm.Icmp.Eq expr_flags (Llvm.const_int base_types.flags_t (value_field_flags_index Number)) "is_number" expr_builder in
+        let the_number = (expr_val => (value_field_index Number)) "the_number" expr_builder in
+        let is_zero = Llvm.build_fcmp Llvm.Fcmp.Oeq the_number (Llvm.const_float base_types.number_t 0.0) "is_zero" expr_builder in
+        let is_numeric_zero_bool = Llvm.build_and is_zero is_number "is_numeric_zero_bool" expr_builder in
+        let is_numeric_zero = Llvm.build_zext is_numeric_zero_bool base_types.char_t "is_numeric_zero" expr_builder in
+        let switch_num = Llvm.build_add is_empty_two is_numeric_zero "switch_num" expr_builder in
+        let switch_inst = Llvm.build_switch switch_num empty_bb 2 expr_builder in
+        Llvm.add_case switch_inst (Llvm.const_int base_types.char_t 0) truthy_bb; (* empty << 1 + is_zero == 0 ===> truthy *)
+        Llvm.add_case switch_inst (Llvm.const_int base_types.char_t 1) falsey_bb; (* empty << 1 + is_zero == 1 ===> falsey *)
+        (ret_val, merge_builder)
+      | UnOp(LogNot, expr) ->
+        let (truth_val, truth_builder) = build_expr old_builder (UnOp(Truthy, expr)) in
+        let the_number = (truth_val => (value_field_index Number)) "the_number" truth_builder in
+        let not_the_number = Llvm.build_fsub (Llvm.const_float base_types.float_t 1.0) the_number "not_the_number" truth_builder in
+        let sp = Llvm.build_struct_gep truth_val (value_field_index Number) "num_pointer" truth_builder in
+        let _ = Llvm.build_store not_the_number sp truth_builder in
+        (truth_val, truth_builder)
+      | UnOp(Neg, expr) ->
+        let ret_val = Llvm.build_malloc base_types.value_t "unop_truthy_ret_val" old_builder in
+        let _ = store_empty ret_val old_builder in
+        let (expr_val, expr_builder) = build_expr old_builder expr in
+        let expr_type = (expr_val => (value_field_index Flags)) "expr_type" expr_builder in
+        let is_number = Llvm.build_icmp Llvm.Icmp.Eq expr_type number_type "is_number" expr_builder in
+        let (finish_bb, finish_builder) = make_block "finish" in
+
+        let (number_bb, number_builder) = make_block "number" in
+        let the_number = (expr_val => (value_field_index Number)) "the_number" number_builder in
+        let minus_the_number = Llvm.build_fneg the_number "minus_the_number" number_builder in
+        let _ = store_number ret_val number_builder minus_the_number in
+        let _ = Llvm.build_br finish_bb number_builder in
+
+        let _ = Llvm.build_cond_br is_number number_bb finish_bb expr_builder in
+        (ret_val, finish_builder)
+      | UnOp(BitNot, expr) -> print_endline "Unsupported Unop" ; print_endline (Ast.string_of_expr exp); raise NotImplemented
+      | UnOp(TypeOf, expr) ->
+        let (expr_val, expr_builder) = build_expr old_builder expr in
+        let expr_type = (expr_val => (value_field_index Flags)) "expr_type" expr_builder in
+        let vp_to_clone_loc = Llvm.build_in_bounds_gep array_of_typeof_val_ptrs [|Llvm.const_int base_types.int_t 0; expr_type|] ("vp_to_clone_log") expr_builder in
+        let vp_to_clone = Llvm.build_load vp_to_clone_loc "vp_to_clone" expr_builder in
+        let ret_val = Llvm.build_call (Hashtbl.find runtime_functions "clone_value") [|vp_to_clone|] "typeof_ret_val" expr_builder in
+        (ret_val, expr_builder)
+      | UnOp(Row, expr) -> print_endline "Unsupported Unop" ; print_endline (Ast.string_of_expr exp); raise NotImplemented
+      | UnOp(Column, expr) -> print_endline "Unsupported Unop" ; print_endline (Ast.string_of_expr exp); raise NotImplemented
+      | ReducedTernary(cond_var, true_var, false_var) ->
+        let ret_val_addr = Llvm.build_alloca base_types.value_p "tern_ret_val_addr" old_builder in
+        let (cond_val, _) = build_expr old_builder (Id(cond_var)) in (* Relying here on the fact that Id() doesn't change the builder *)
+        let merge_bb = Llvm.append_block context "merge" form_decl in
+        let merge_builder = Llvm.builder_at_end context merge_bb in
+        let ret_val = Llvm.build_load ret_val_addr "tern_ret_val" merge_builder in
+
+        let truthy_bb = Llvm.append_block context "truthy" form_decl in
+        let truthy_builder = Llvm.builder_at_end context truthy_bb in
+        let (truthy_val, _) = build_expr truthy_builder (Id(true_var)) in (* Relying here on the fact that Id() doesn't change the builder *)
+        let _ = Llvm.build_store truthy_val ret_val_addr truthy_builder in
+        let _ = Llvm.build_br merge_bb truthy_builder in
+
+        let falsey_bb = Llvm.append_block context "falsey" form_decl in
+        let falsey_builder = Llvm.builder_at_end context falsey_bb in
+        let (falsey_val, _) = build_expr falsey_builder (Id(false_var)) in (* Relying here on the fact that Id() doesn't change the builder *)
+        let _ = Llvm.build_store falsey_val ret_val_addr falsey_builder in
+        let _ = Llvm.build_br merge_bb falsey_builder in
+
+        let empty_bb = Llvm.append_block context "empty" form_decl in
+        let empty_builder = Llvm.builder_at_end context empty_bb in
+        let ret_val_empty = Llvm.build_malloc base_types.value_t "tern_empty" empty_builder in
+        let _ = store_empty ret_val_empty empty_builder in
+        let _ = Llvm.build_store ret_val_empty ret_val_addr empty_builder in
+        let _ = Llvm.build_br merge_bb empty_builder in
+
+        let expr_flags = (cond_val => (value_field_index Flags)) "expr_flags" old_builder in
+        let is_empty_bool = (Llvm.build_icmp Llvm.Icmp.Eq expr_flags (Llvm.const_int base_types.flags_t (value_field_flags_index Empty)) "is_empty_bool" old_builder) in
+        let is_empty = Llvm.build_zext is_empty_bool base_types.char_t "is_empty" old_builder in
+        let is_empty_two = Llvm.build_shl is_empty (Llvm.const_int base_types.char_t 1) "is_empty_two" old_builder in
+        let is_number = Llvm.build_icmp Llvm.Icmp.Eq expr_flags (Llvm.const_int base_types.flags_t (value_field_flags_index Number)) "is_number" old_builder in
+        let the_number = (cond_val => (value_field_index Number)) "the_number" old_builder in
+        let is_zero = Llvm.build_fcmp Llvm.Fcmp.Oeq the_number (Llvm.const_float base_types.number_t 0.0) "is_zero" old_builder in
+        let is_numeric_zero_bool = Llvm.build_and is_zero is_number "is_numeric_zero_bool" old_builder in
+        let is_numeric_zero = Llvm.build_zext is_numeric_zero_bool base_types.char_t "is_numeric_zero" old_builder in
+        let switch_num = Llvm.build_add is_empty_two is_numeric_zero "switch_num" old_builder in
+        let switch_inst = Llvm.build_switch switch_num empty_bb 2 old_builder in
+        Llvm.add_case switch_inst (Llvm.const_int base_types.char_t 0) truthy_bb; (* empty << 1 + is_zero == 0 ===> truthy *)
+        Llvm.add_case switch_inst (Llvm.const_int base_types.char_t 1) falsey_bb; (* empty << 1 + is_zero == 1 ===> falsey *)
+        (ret_val, merge_builder)
+      | unknown_expr -> print_endline (string_of_expr unknown_expr);raise NotImplemented in
+    let (ret_value_p, final_builder) = build_expr builder_at_top formula_expr in
+    let _ = Llvm.build_ret ret_value_p final_builder in
+    form_decl in
+
+  (*build formula creates a formula declaration in a separate method from the function it belongs to*)
+  let build_formula (varname, idx) formula_array element symbols =
+    let storage_addr = Llvm.build_in_bounds_gep formula_array [|Llvm.const_int base_types.int_t idx|] "" main_bod in
+    let getStarts = function (* Not really just for starts *)
+        Abs(LitInt(1)) | Abs(LitInt(0)) | DimensionStart | DimensionEnd -> (1, -1)
+      | Abs(Id(s)) ->
+        (match StringMap.find s symbols with
+           LocalVariable(i) | GlobalVariable(i) -> (0, i)
+         | _ -> raise(TransformedAway("Error in " ^ varname ^ ": The LHS expresssions should always either have dimension length 1 or be the name of a variable in their own scope.")))
+      | _ -> print_endline ("Error in " ^ varname ^ " formula number " ^ string_of_int idx); raise(LogicError("Something wrong with the index of formula: " ^ string_of_formula element)) in
+    let getEnds = function
+        Some x -> let (b, c) = getStarts x in (b, c, 0)
+      | None -> (0, -1, 1) in
+    let (fromStartRow, rowStartVarnum) = getStarts element.formula_row_start in
+    let (fromStartCol, colStartVarnum) = getStarts element.formula_col_start in
+    let (toEndRow, rowEndVarnum, isSingleRow) = getEnds element.formula_row_end in
+    let (toEndCol, colEndVarnum, isSingleCol) = getEnds element.formula_col_end in
+
+    let _ = Llvm.build_store (Llvm.const_int base_types.char_t fromStartRow) (Llvm.build_struct_gep storage_addr (formula_field_index FromFirstRow) "" main_bod) main_bod in
+    let _ = Llvm.build_store (Llvm.const_int base_types.int_t rowStartVarnum) (Llvm.build_struct_gep storage_addr (formula_field_index RowStartNum) "" main_bod) main_bod in
+    let _ = Llvm.build_store (Llvm.const_int base_types.char_t toEndRow) (Llvm.build_struct_gep storage_addr (formula_field_index ToLastRow) "" main_bod) main_bod in
+    let _ = Llvm.build_store (Llvm.const_int base_types.int_t rowEndVarnum) (Llvm.build_struct_gep storage_addr (formula_field_index RowEndNum) "" main_bod) main_bod in
+    let _ = Llvm.build_store (Llvm.const_int base_types.char_t isSingleRow) (Llvm.build_struct_gep storage_addr (formula_field_index IsSingleRow) "" main_bod) main_bod in
+
+    let _ = Llvm.build_store (Llvm.const_int base_types.char_t fromStartCol) (Llvm.build_struct_gep storage_addr (formula_field_index FromFirstCols) "" main_bod) main_bod in
+    let _ = Llvm.build_store (Llvm.const_int base_types.int_t colStartVarnum) (Llvm.build_struct_gep storage_addr (formula_field_index ColStartNum) "" main_bod) main_bod in
+    let _ = Llvm.build_store (Llvm.const_int base_types.char_t toEndCol) (Llvm.build_struct_gep storage_addr (formula_field_index ToLastCol) "" main_bod) main_bod in
+    let _ = Llvm.build_store (Llvm.const_int base_types.int_t colEndVarnum) (Llvm.build_struct_gep storage_addr (formula_field_index ColEndNum) "" main_bod) main_bod in
+    let _ = Llvm.build_store (Llvm.const_int base_types.char_t isSingleCol) (Llvm.build_struct_gep storage_addr (formula_field_index IsSingleCol) "" main_bod) main_bod in
+
+    let form_decl = build_formula_function (varname, idx) symbols element.formula_expr in
+    let _ = Llvm.build_store form_decl (Llvm.build_struct_gep storage_addr (formula_field_index FormulaCall) "" main_bod) main_bod in
+    () in
+
+  (* Builds a var_defn struct for each variable *)
+  let build_var_defn defn varname va symbols =
+    let numForm = List.length va.var_formulas in
+    let formulas = Llvm.build_array_malloc base_types.formula_t (Llvm.const_int base_types.int_t numForm) "" main_bod in
+    (*getDefn simply looks up the correct definition for a dimension declaration of a variable. Note that currently it is ambiguous whether it is a variable or a literal. TOOD: consider negative numbers*)
+    let getDefn = function
+        DimId(a) -> (match StringMap.find a symbols with LocalVariable(i) -> i | GlobalVariable(i) -> i | _ -> raise(TransformedAway("Error in " ^ varname ^ ": The LHS expresssions should always either have dimension length 1 or be the name of a variable in their own scope.")))
+      | DimInt(1) -> 1
+      | DimInt(_) -> print_endline "Non1Dim" ; raise(NotImplemented) in
+    let _ = (match va.var_rows with
+          DimInt(1) -> Llvm.build_store (Llvm.const_int base_types.char_t 1) (Llvm.build_struct_gep defn (var_defn_field_index OneByOne) "" main_bod) main_bod
+        | DimInt(_) -> print_endline "Non1Dim" ; raise(NotImplemented)
+        | DimId(a) -> (
+            let _ = Llvm.build_store (Llvm.const_int base_types.char_t 0) (Llvm.build_struct_gep defn (var_defn_field_index OneByOne) "" main_bod) main_bod in ();
+            let _ = Llvm.build_store (Llvm.const_int base_types.int_t (getDefn va.var_rows)) (Llvm.build_struct_gep defn (var_defn_field_index Rows) "" main_bod) main_bod in ();
+            Llvm.build_store (Llvm.const_int base_types.int_t (getDefn va.var_cols)) (Llvm.build_struct_gep defn (var_defn_field_index Cols) "" main_bod) main_bod
+          )
+      ) in
+    let _ = Llvm.build_store (Llvm.const_int base_types.int_t numForm) (Llvm.build_struct_gep defn (var_defn_field_index NumFormulas) "" main_bod) main_bod
+    and _ = Llvm.build_store formulas (Llvm.build_struct_gep defn (var_defn_field_index Formulas) "" main_bod) main_bod
+    and _ = Llvm.build_store (Llvm.build_global_stringptr varname "" main_bod) (Llvm.build_struct_gep defn (var_defn_field_index VarName) "" main_bod) main_bod in
+    List.iteri (fun idx elem -> build_formula (varname, idx) formulas elem symbols) va.var_formulas in
+
+  (* Creates a scope object and inserts the necessary instructions into main to populate the var_defns, and
+   * into the function specified by builder to populate the scope object. *)
+  let build_scope_obj
+      fname (* The function name, or "globals" *)
+      symbols (* The symbols to use when creating the functions *)
+      vars (* The variables to build definitions and formula-functions for *)
+      static_location_ptr (* The copy of the global pointer used in main *)
+      var_defns_loc (* The copy of the global pointer used in the local function *)
+      num_params (* How many parameters the function takes *)
+      builder (* The LLVM builder for the local function *)
+    =
+    let cardinal = Llvm.const_int base_types.int_t (StringMap.cardinal vars) in
+    let build_var_defns =
+      let static_var_defns = Llvm.build_array_malloc base_types.var_defn_t cardinal (fname ^ "_static_var_defns") main_bod in
+      let _ = Llvm.build_store static_var_defns static_location_ptr main_bod in
+      let add_variable varname va (sm, count) =
+        let fullname = fname ^ "_" ^ varname in
+        let defn = (Llvm.build_in_bounds_gep static_var_defns [|Llvm.const_int base_types.int_t count|] (fullname ^ "_defn") main_bod) in
+        let _ = build_var_defn defn fullname va symbols in
+        (StringMap.add varname count sm, count + 1) in
+      ignore (StringMap.fold add_variable vars (StringMap.empty, 0)) in
+
+    let var_defns = Llvm.build_load var_defns_loc (fname ^ "_global_defn_ptr_loc") builder in
+    let var_insts = Llvm.build_array_malloc base_types.var_instance_p cardinal "var_insts" builder in
+    let scope_obj = Llvm.build_malloc base_types.extend_scope_t "scope_obj" builder in
+
+    (*Store variable definition and instance*)
+    let _ = Llvm.build_store var_defns (Llvm.build_struct_gep scope_obj (scope_field_type_index VarDefn) "" builder) builder in
+    let _ = Llvm.build_store var_insts (Llvm.build_struct_gep scope_obj (scope_field_type_index VarInst) "" builder) builder in
+    let _ = Llvm.build_store cardinal (Llvm.build_struct_gep scope_obj (scope_field_type_index VarNum) "" builder) builder in
+    let _ = Llvm.build_store (Llvm.const_int base_types.int_t 0) (Llvm.build_struct_gep scope_obj (scope_field_type_index ScopeRefCount) "" builder) builder in
+    let paramarray = if num_params > 0 then Llvm.build_array_malloc base_types.value_p (Llvm.const_int base_types.int_t num_params) "paramarray" builder else Llvm.const_pointer_null (Llvm.pointer_type base_types.value_p) in
+    let _ = Llvm.build_store paramarray (Llvm.build_struct_gep scope_obj (scope_field_type_index FunctionParams) "" builder) builder in
+    let copy_fn_arg i =
+      let param_addr = Llvm.build_in_bounds_gep paramarray [|Llvm.const_int base_types.int_t i|] (fname ^ "_param_" ^ string_of_int i ^ "_loc") builder in
+      ignore (Llvm.build_store (Llvm.param (StringMap.find fname function_llvalues) i) param_addr builder) in
+    List.iter copy_fn_arg (zero_until num_params);
+    let _ = Llvm.build_call (Hashtbl.find runtime_functions "null_init") [|scope_obj|] "" builder in
+    build_var_defns ; scope_obj in
+  (* End of build_scope_obj *)
+
+  let build_function fname (fn_def, fn_llvalue) =
+    (* Build the symbol table for this function *)
+    let (local_indices, num_locals) = index_map Locals fn_def.func_body in
+    let add_param (st, idx) param_name =
+      let new_st = StringMap.add param_name (FunctionParameter(idx)) st in
+      (new_st, idx + 1) in
+    let (params_and_globals, _) = List.fold_left add_param (global_symbols, 0) (List.map snd fn_def.func_params) in
+    let symbols = StringMap.fold StringMap.add local_indices params_and_globals in
+    let fn_idx = match StringMap.find fname extend_fn_numbers with ExtendFunction(i) -> i | _ -> raise(LogicError(fname ^ " not in function table")) in
+    let builder = Llvm.builder_at_end context (Llvm.entry_block fn_llvalue) in
+    let static_location_ptr = Llvm.build_in_bounds_gep array_of_vardefn_ptrs [|Llvm.const_int base_types.int_t 0; Llvm.const_int base_types.int_t fn_idx|] (fname ^ "_global_defn_ptr") main_bod in
+    let var_defns_loc = Llvm.build_in_bounds_gep array_of_vardefn_ptrs [|Llvm.const_int base_types.int_t 0; Llvm.const_int base_types.int_t fn_idx|] (fname ^ "_local_defn_ptr") builder in
+
+    let scope_obj = build_scope_obj fname symbols fn_def.func_body static_location_ptr var_defns_loc (List.length fn_def.func_params) builder in
+
+    let ret = snd fn_def.func_ret_val in
+    match ret with
+      Id(name) ->
+      (
+        match (try StringMap.find name symbols with Not_found -> raise(LogicError("Something went wrong with your semantic analysis - " ^ name ^ " not found"))) with
+          LocalVariable(i) ->
+          let llvm_var = Llvm.build_call getVar [|scope_obj; Llvm.const_int base_types.int_t i|] "return_variable" builder in
+          let llvm_retval = Llvm.build_call getVal [|llvm_var; Llvm.const_int base_types.int_t 0; Llvm.const_int base_types.int_t 0|] "return_value" builder in
+          ignore (Llvm.build_ret llvm_retval builder)
+        | _ -> print_endline (string_of_expr ret); raise(TransformedAway("Error in " ^ fname ^ ": The return value should always have been transformed into a local variable"))
+      )
+    | _ -> print_endline (string_of_expr ret); raise(TransformedAway("Error in " ^ fname ^ ": The return value should always have been transformed into a local variable")) in
+  (* End of build_function *)
+
+  (* Build the global scope object *)
+  let vardefn_p_p = Llvm.build_alloca base_types.var_defn_p "v_p_p" main_bod in
+  let global_scope_obj = build_scope_obj "globals" global_symbols globals vardefn_p_p vardefn_p_p 0 main_bod in
+  let _ = Llvm.build_store global_scope_obj global_scope_loc main_bod in
+
+  (*iterates over function definitions*)
+  StringMap.iter build_function extend_functions ;
+
+  (* Define the LLVM entry point for the program *)
+  let extend_entry_point = StringMap.find "main" function_llvalues in
+  let inp = Llvm.build_alloca base_types.value_t "input_arg" main_bod in
+  let _ = Llvm.build_call extend_entry_point (Array.of_list [inp]) "" main_bod in
+  let _ = Llvm.build_ret (Llvm.const_int base_types.int_t 0) main_bod in
+
+  base_module
+
+let build_this ast_mapped =
+  let modu = (translate ast_mapped) in
+  let _ = Llvm_analysis.assert_valid_module modu in
+  modu
+\end{lstlisting}
+\section{linker.ml}
+\begin{lstlisting}{ocaml}
+module StringSet = Set.Make(String)
+let link xtndOut ast compiler outputFile =
+  let tmpFilenameLL = Filename.temp_file "" ".ll"
+  and tmpFilenameC = Filename.temp_file "" ".o"
+  and getExterns (_,_,extern) =
+    StringSet.elements
+      (Ast.StringMap.fold
+        (fun key value store -> StringSet.add value.Ast.extern_fn_libname store)
+        extern
+        StringSet.empty) in
+  let tmpChan = open_out tmpFilenameLL in
+  output_string tmpChan xtndOut; close_out tmpChan;
+  let call1 = (String.concat " " ("llc-3.8" :: "-filetype=obj" :: tmpFilenameLL :: "-o" :: tmpFilenameC :: []))
+  and call2 = (String.concat " " (compiler :: "-O -o" :: outputFile :: tmpFilenameC :: (getExterns ast) @ ["runtime.o"])) ^ " -lm" in
+  let resc1 = Sys.command call1 in
+  if resc1 == 0 then (
+    Sys.remove tmpFilenameLL;
+    let resc2 = Sys.command call2 in
+      Sys.remove tmpFilenameC;
+      if resc2 == 0 then () else raise Not_found
+    )
+  else (Sys.remove tmpFilenameC;raise Not_found)
+\end{lstlisting}
+\section{main.ml}
+\begin{lstlisting}{ocaml}
+open Ast;;
+
+let print_ast = ref false
+let interpret_ast = ref false
+let compile_ast = ref false
+let link = ref false
+let output = ref "./out"
+let compiler = ref "gcc"
+
+let the_ast = ref (StringMap.empty, StringMap.empty, StringMap.empty)
+let just_one_please = ref false
+
+let speclist = [
+                ("-p", Arg.Set print_ast, "Print the AST");
+                ("-i", Arg.Set interpret_ast, "Interpret the program");
+                ("-c", Arg.Set compile_ast, "Compile the program");
+                ("-l", Arg.Set link, "Link the program");
+]
+
+let usage_message = "Welcome to Extend!\n\nUsage: extend <options> <source-file>\n\nOptions are:"
+
+let parse_ast filename =
+  if !just_one_please
+  then print_endline "Any files after the first one are ignored."
+  else just_one_please := true ; the_ast := (Transform.create_ast filename);;
+
+Arg.parse speclist parse_ast usage_message;
+if not !just_one_please then Arg.usage speclist usage_message else ();
+if !print_ast then print_endline (string_of_program !the_ast) else ();
+if !interpret_ast then (Interpreter.interpret !the_ast; ()) else ();
+if !compile_ast then
+  let compiled = (Llvm.string_of_llmodule (Codegen.translate !the_ast))
+  in
+    if not (!link) then print_endline compiled
+    else Linker.link compiled !the_ast !compiler !output
+else ();
+\end{lstlisting}
+\section{lib.c}
+\begin{lstlisting}{c}
+#include<stdio.h>
+#include<stdlib.h>
+#include<math.h>
+#include<string.h>
+#include<stdbool.h>
+/* #include <sys/time.h> */
+#include <time.h>
+#include "runtime.h"
+
+#define MAX_FILES 255
+FILE *open_files[1 + MAX_FILES] = {NULL};
+int open_num_files = 0;
+
+value_p print(value_p whatever, value_p text) {
+	if(!assertSingleString(text)) return new_val();
+	if(!assertText(text)) return new_val();
+	printf("%s", text->str->text);
+	return new_val();
+}
+
+value_p printv(value_p whatever, value_p text) {
+	printf("%s", text->str->text);
+	return new_val();
+}
+
+value_p printd(value_p whatever, value_p text) {
+	printf("%f\n", text->numericVal);
+	value_p result = malloc(sizeof(struct value_t));
+	return result;
+}
+
+value_p to_string(value_p val) {
+		if(assertSingleNumber(val)) {
+			double possible_num = val->numericVal;
+			int rounded_int = (int) lrint(possible_num);
+			char *converted_str;
+			if (fabs(possible_num - rounded_int) < FLOAT_CUTOFF) {
+				int size = snprintf(NULL, 0, "%d", rounded_int);
+				converted_str = malloc(size + 1);
+				sprintf(converted_str, "%d", rounded_int);
+			} else {
+				int size = snprintf(NULL, 0, "%f", possible_num);
+				converted_str = malloc(size + 1);
+				sprintf(converted_str, "%f", possible_num);
+			}
+			value_p result = box_value_string(new_string(converted_str));
+			return result;
+		}
+		else if(assertSingleString(val)) return val;
+		else if(val->flags == FLAG_EMPTY) {
+ 			value_p _new = new_val();
+ 			setString(_new, "empty", 5);
+ 			return _new;
+ 		}
+		// If the struct does not hold a string or number, return empty?
+		return new_val();
+}
+
+#define FUNC(name) value_p extend_##name(value_p a){if(!assertSingleNumber(a)) return new_val();double val = name(a->numericVal);return new_number(val);}
+FUNC(sin)
+FUNC(cos)
+FUNC(tan)
+FUNC(acos)
+FUNC(asin)
+FUNC(atan)
+FUNC(sinh)
+FUNC(cosh)
+FUNC(tanh)
+FUNC(exp)
+FUNC(log)
+FUNC(log10)
+FUNC(sqrt)
+FUNC(ceil)
+FUNC(fabs)
+FUNC(floor)
+
+value_p extend_get_stdin() {
+	if (open_num_files + 1 > MAX_FILES) {
+		return new_val();
+	} else {
+		open_num_files++;
+		open_files[open_num_files] = stdin;
+		return new_number((double) open_num_files);
+	}
+}
+
+value_p extend_get_stdout() {
+	if (open_num_files + 1 > MAX_FILES) {
+		return new_val();
+	} else {
+		open_num_files++;
+		open_files[open_num_files] = stdout;
+		return new_number((double) open_num_files);
+	}
+}
+
+value_p extend_get_stderr() {
+	if (open_num_files + 1 > MAX_FILES) {
+		return new_val();
+	} else {
+		open_num_files++;
+		open_files[open_num_files] = stderr;
+		return new_number((double) open_num_files);
+	}
+}
+
+value_p extend_open(value_p filename, value_p mode){
+	FILE *val;
+	if (   !assertSingleString(filename)
+			|| !assertSingleString(mode)
+			|| open_num_files + 1 > MAX_FILES) {
+				return new_val();
+	}
+	val = fopen(filename->str->text, mode->str->text);
+	if(val == NULL) return new_val();
+	open_num_files++;
+	open_files[open_num_files] = val;
+	return new_number((double) open_num_files);
+}
+
+value_p extend_close(value_p file_handle) {
+	if(!assertSingleNumber(file_handle)) {
+		// Per the LRM this is actually supposed to crash the program.
+		fprintf(stderr, "EXITING - Attempted to close something that was not a valid file pointer\n");
+		exit(-1);
+	}
+	int fileNum = (int) file_handle->numericVal;
+
+	if (fileNum > open_num_files || open_files[fileNum] == NULL) {
+		// Per the LRM this is actually supposed to crash the program.
+		fprintf(stderr, "EXITING - Attempted to close something that was not a valid file pointer\n");
+		exit(-1);
+	}
+	fclose(open_files[fileNum]);
+	open_files[fileNum] = NULL; // Empty the container for the pointer.
+	return new_val(); // asssuming it was an open valid handle, close() is just supposed to return empty
+}
+
+value_p extend_read(value_p file_handle, value_p num_bytes){
+	if(!assertSingleNumber(file_handle) || !assertSingleNumber(num_bytes)) return new_val();
+	int max_bytes;
+	int fileNum = (int) file_handle->numericVal;
+	if (fileNum > open_num_files || open_files[fileNum] == NULL)  return new_val();
+	FILE *f = open_files[fileNum];
+	max_bytes = (int) num_bytes->numericVal;
+	if (max_bytes == 0) {
+		long cur_pos = ftell(f);
+		fseek(f, 0, SEEK_END);
+		long end_pos = ftell(f);
+		fseek(f, cur_pos, SEEK_SET);
+		max_bytes = end_pos - cur_pos;
+	}
+	char *buf = malloc(sizeof(char) * (max_bytes + 1));
+	int bytes_read = fread(buf, sizeof(char), max_bytes, f);
+	buf[bytes_read] = 0;
+	value_p result = box_value_string(new_string(buf));
+	free(buf);
+	return result;
+	//edge case: how to return the entire contents of the file if n == empty?
+}
+
+value_p extend_readline(value_p file_handle) {
+	int	i=0, buf_size = 256;
+	char next_char;
+	if (!assertSingleNumber(file_handle)) return new_val();
+	int fileNum = (int) file_handle->numericVal;
+	FILE *f = open_files[fileNum];
+	if (fileNum > open_num_files || open_files[fileNum] == NULL) {
+		return new_val();
+	}
+	char *buf = (char *) malloc (buf_size * sizeof(char));
+	while ((next_char = fgetc(f)) != '\n') {
+		buf[i++] = next_char;
+		if (i == buf_size - 2) {
+			buf_size *= 2;
+			char *new_buf = (char *) malloc (buf_size * sizeof(char));
+			memcpy(new_buf, buf, i);
+			free(buf);
+			buf = new_buf;
+		}
+	}
+	buf[i] = '\0';
+	value_p result = box_value_string(new_string(buf));
+	free(buf);
+	return result;
+}
+
+value_p extend_write(value_p file_handle, value_p buffer){
+	if(!assertSingleNumber(file_handle) || !assertSingleString(buffer)) return new_val();
+	int fileNum = (int) file_handle->numericVal;
+	if (fileNum > open_num_files || open_files[fileNum] == NULL) {
+		// Per the LRM this is actually supposed to crash the program.
+		fprintf(stderr, "EXITING - Attempted to write to something that was not a valid file pointer\n");
+		exit(-1);
+	}
+	fwrite(buffer->str->text, 1, buffer->str->length, open_files[fileNum]);
+	// TODO: make this return empty once compiler handles Id(s)
+	// RN: Use the return value to close the file
+	return new_number((double) fileNum);
+}
+
+value_p extend_current_hour() {
+	time_t ltime;
+	struct tm info;
+	ltime = time(&ltime);
+	localtime_r(&ltime, &info);
+	return new_number((double) info.tm_hour);
+}
+\end{lstlisting}
+\section{runtime.c}
+\begin{lstlisting}{c}
+#include<stdio.h>
+#include<stdlib.h>
+#include<math.h>
+#include<string.h>
+#include<stdbool.h>
+#include "runtime.h"
+
+void debug_print(value_p val, char *which_value) {
+	char *flag_meanings[4] = {"Empty", "Number", "String", "Subrange"};
+	fprintf(stderr, "------Everything you ever wanted to know about %s:------\n", which_value == NULL ? "some anonymous variable" : which_value);
+	fprintf(stderr, "Memory address: %p\n", val);
+	if (val == NULL) {
+		fprintf(stderr, "------------Nice try asking me to dereference a null pointer\n------------");
+		return;
+	}
+	fprintf(stderr, "Flags: %d (%s)\n", val->flags, flag_meanings[val->flags]);
+	fprintf(stderr, "NumericVal: %f\n", val->numericVal);
+	fprintf(stderr, "String contents: Probably safer not to check that pointer (%p) blindly\n", val->str);
+	if (val->flags == FLAG_STRING && val->str != NULL) {
+		fprintf(stderr, "It says it's a string and it's not a NULL pointer though, so here you go:\n");
+		fprintf(stderr, "String refcount: %d\n", val->str->refs);
+		fprintf(stderr, "String length: %ld\n", val->str->length);
+		fprintf(stderr, "String char* memory address: %p\n", val->str->text);
+		if (val->str->text == NULL) {
+			fprintf(stderr, "Not going to print the contents of NULL!\n");
+		} else {
+			fprintf(stderr, "String char* contents:\n%s\n", val->str->text);
+		}
+	}
+	fprintf(stderr, "Subrange contents: Probably safer not to check that pointer (%p) blindly either\n", val->subrange);
+	fprintf(stderr, "------That's all I've got to say about %s:------\n", which_value == NULL ? "some anonymous variable" : which_value);
+}
+
+void debug_print_formula(struct ExtendFormula *fdef) {
+	fprintf(stderr, "------Everything you ever wanted to know about your favorite formula:------\n");
+	fprintf(stderr, "RowStart varnum: %d %d\n", fdef->rowStart_varnum, fdef->fromFirstRow);
+	fprintf(stderr, "RowEnd varnum: %d %d\n", fdef->rowEnd_varnum, fdef->toLastRow);
+	fprintf(stderr, "ColStart varnum: %d %d\n", fdef->colStart_varnum, fdef->fromFirstCol);
+	fprintf(stderr, "ColEnd varnum: %d %d\n", fdef->colEnd_varnum, fdef->toLastCol);
+}
+
+void debug_print_res_formula(struct ResolvedFormula *rdef) {
+	fprintf(stderr, "Some formula with function pointer %p applies to: [%d:%d,%d:%d]\n", rdef->formula, rdef->rowStart, rdef->rowEnd, rdef->colStart, rdef->colEnd);
+}
+
+void debug_print_vardefn(struct var_defn *pdef) {
+	fprintf(stderr, "------Everything you ever wanted to know about var defn %s:------\n", pdef->name);
+	fprintf(stderr, "Row varnum: %d\n", pdef->rows_varnum);
+	fprintf(stderr, "Col varnum: %d\n", pdef->cols_varnum);
+	fprintf(stderr, "Num formulas: %d\n", pdef->numFormulas);
+	fprintf(stderr, "Formula defs: \n");
+	int i;
+	for (i=0; i < pdef->numFormulas; i++) {
+		debug_print_formula(pdef->formulas + i);
+	}
+	fprintf(stderr, "Is 1x1: %d\n", pdef->isOneByOne);
+}
+
+void debug_print_varinst(struct var_instance *inst) {
+	fprintf(stderr, "------Everything you ever wanted to know about var %s:------\n", inst->name);
+	fprintf(stderr, "Rows: %d\n", inst->rows);
+	fprintf(stderr, "Cols: %d\n", inst->cols);
+	fprintf(stderr, "Num formulas: %d\n", inst->numFormulas);
+	fprintf(stderr, "*****Formulas:*****\n");
+	int i;
+	for (i = 0; i < inst->numFormulas; i++) {
+		debug_print_res_formula(inst->formulas + i);
+	}
+	fprintf(stderr, "**** End of Formulas *** \n");
+	fprintf(stderr, "~~~~~~~~Cells:~~~~~~~\n");
+	for (i = 0; i < inst->rows * inst->cols; i++) {
+		printf("%s[%d,%d]: Status=%d\n", inst->name, i / inst->cols, i % inst->cols, inst->status[i]);
+		if (inst->status[i] == CALCULATED) {
+			printf("%s[%d,%d] Value:\n", inst->name, i / inst->cols, i % inst->cols);
+			debug_print(inst->values[i], inst->name);
+		}
+	}
+	fprintf(stderr, "~~~ End of Cells: ~~~\n");
+}
+
+double setNumeric(value_p result, double val) {
+	result->flags = FLAG_NUMBER;
+	return (result->numericVal = val);
+}
+
+char* setString(value_p result, char *str, int length) {
+	result->flags = FLAG_STRING;
+	result->str = malloc(sizeof(struct string_t));
+  result->str->length = length;
+	return (result->str->text = str);
+}
+
+double setFlag(value_p result, double flag_num) {
+	return (result->flags = flag_num);
+}
+
+int assertSingle(value_p value) {
+	/* TODO: dereference 1 by 1 subrange */
+	return !(value->flags == FLAG_SUBRANGE);
+}
+
+int assertSingleNumber(value_p p) {
+	if (!assertSingle(p)) {
+		return 0;
+	}
+	return (p->flags == FLAG_NUMBER);
+}
+
+int assertText(value_p my_val) {
+	return (my_val->flags == FLAG_STRING);
+}
+
+int assertSingleString(value_p p) {
+	if (!assertSingle(p)) {
+		return 0;
+	}
+	return (p->flags == FLAG_STRING);
+}
+
+int assertEmpty(value_p p) {
+	if (!assertSingle(p)) {
+		return 0;
+	}
+	return (p->flags == FLAG_EMPTY);
+}
+
+value_p new_val() {
+	value_p empty_val = malloc(sizeof(struct value_t));
+	setFlag(empty_val, FLAG_EMPTY);
+	return empty_val;
+}
+
+value_p new_number(double val) {
+	value_p new_v = malloc(sizeof(struct value_t));
+	setFlag(new_v, FLAG_NUMBER);
+	setNumeric(new_v, val);
+	return new_v;
+}
+
+value_p new_string_go_all_the_way(char *s) {
+	if (s == NULL) return new_val();
+	value_p new_v = malloc(sizeof(struct value_t));
+	setFlag(new_v, FLAG_STRING);
+	string_p new_str = malloc(sizeof(struct string_t));
+	long len = strlen(s);
+	new_str->text = malloc(len+1);
+	strcpy(new_str->text, s);
+	new_str->length = len;
+	new_str->refs = 1;
+	new_v->str = new_str;
+	return new_v;
+}
+
+struct ExtendScope *global_scope;
+
+void null_init(struct ExtendScope *scope_ptr) {
+	int i;
+	for(i = 0; i < scope_ptr->numVars; i++)
+		scope_ptr->vars[i] = NULL;
+}
+
+int getIntFromOneByOne(struct ExtendScope *scope_ptr, int varnum) {
+	struct var_instance *inst = get_variable(scope_ptr, varnum);
+	if (inst->rows != 1 || inst->cols != 1) {
+		fprintf(stderr, "The variable you claimed (%s) was one by one is actually %d by %d.\n", inst->name, inst->rows, inst->cols);
+		debug_print_varinst(inst);
+		exit(-1);
+	}
+	value_p val = getVal(inst, 0, 0);
+	if (!assertSingleNumber(val)) {
+		fprintf(stderr, "The variable you claimed (%s) was a number isn't.\n", inst->name);
+		debug_print(val, inst->name);
+		exit(-1);
+	}
+	return (int) lrint(val->numericVal);
+}
+
+struct var_instance *instantiate_variable(struct ExtendScope *scope_ptr, struct var_defn def) {
+	struct var_instance *inst = malloc(sizeof(struct var_instance));
+	if(def.isOneByOne) {
+		inst->rows = 1;
+		inst->cols = 1;
+	} else {
+		inst->rows = getIntFromOneByOne(scope_ptr, def.rows_varnum);
+		inst->cols = getIntFromOneByOne(scope_ptr, def.cols_varnum);
+	}
+	// TODO: do the same thing for each FormulaFP to turn an ExtendFormula into a ResolvedFormula
+	inst->numFormulas = def.numFormulas;
+	inst->closure = scope_ptr;
+	inst->name = def.name;
+	int size = inst->rows * inst->cols;
+	inst->values = malloc(sizeof(value_p) * size);
+	memset(inst->values, 0, sizeof(value_p) * size);
+	inst->status = malloc(sizeof(char) * size);
+	memset(inst->status, 0, sizeof(char) * size);
+	inst->formulas = malloc(sizeof(struct ResolvedFormula) * inst->numFormulas);
+	//debug_print_vardefn(&def);
+	//debug_print_varinst(inst);
+	int i;
+	for(i = 0; i < inst->numFormulas; i++) {
+
+		// Set the formula function pointer to the pointer from the definition
+		inst->formulas[i].formula = def.formulas[i].formula;
+
+		if (def.isOneByOne) {
+			inst->formulas[i].rowStart = 0;
+			inst->formulas[i].rowEnd = 1;
+			inst->formulas[i].colStart = 0;
+			inst->formulas[i].colEnd = 1;
+		} else {
+			if(def.formulas[i].fromFirstRow) {
+				inst->formulas[i].rowStart = 0;
+			} else {
+				inst->formulas[i].rowStart = getIntFromOneByOne(scope_ptr, def.formulas[i].rowStart_varnum);
+				if (inst->formulas[i].rowStart < 0) {
+					inst->formulas[i].rowStart += inst->rows;
+				}
+				if (inst->formulas[i].rowStart < 0 || inst->formulas[i].rowStart >= inst->rows) {
+					//Doesn't matter, but will never get called
+				}
+			}
+			if (def.formulas[i].isSingleRow) {
+				inst->formulas[i].rowEnd = inst->formulas[i].rowStart + 1;
+			} else if (def.formulas[i].toLastRow) {
+				inst->formulas[i].rowEnd = inst->rows;
+			} else {
+				inst->formulas[i].rowEnd = getIntFromOneByOne(scope_ptr, def.formulas[i].rowEnd_varnum);
+			}
+			if(def.formulas[i].fromFirstCol) {
+				inst->formulas[i].colStart = 0;
+			} else {
+				inst->formulas[i].colStart = getIntFromOneByOne(scope_ptr, def.formulas[i].colStart_varnum);
+				if (inst->formulas[i].colStart < 0) {
+					inst->formulas[i].colStart += inst->cols;
+				}
+				if (inst->formulas[i].colStart < 0 || inst->formulas[i].colStart >= inst->cols) {
+					//Doesn't matter, but will never get called
+				}
+			}
+			if (def.formulas[i].isSingleCol) {
+				inst->formulas[i].colEnd = inst->formulas[i].colStart + 1;
+			} else if (def.formulas[i].toLastCol) {
+				inst->formulas[i].colEnd = inst->cols;
+			} else {
+				inst->formulas[i].colEnd = getIntFromOneByOne(scope_ptr, def.formulas[i].colEnd_varnum);
+			}
+		}
+	}
+
+	scope_ptr->refcount++;
+	return inst;
+}
+
+struct var_instance *get_variable(struct ExtendScope *scope_ptr, int varnum) {
+	if (varnum >= scope_ptr->numVars) {
+		fprintf(stderr, "Runtime error: Asked for nonexistant variable number\n");
+		exit(-1);
+	}
+	if (scope_ptr->vars[varnum] == NULL) {
+		scope_ptr->vars[varnum] = instantiate_variable(scope_ptr, scope_ptr->defns[varnum]);
+	}
+	return scope_ptr->vars[varnum];
+}
+
+char assertInBounds(struct var_instance *defn, int r, int c) {
+	return (
+		r >= 0 && r < defn->rows &&
+		c >= 0 && c < defn->cols
+	);
+}
+
+value_p calcVal(struct var_instance *inst, int r, int c) {
+	int i;
+	for (i = 0; i < inst->numFormulas; i++) {
+		if (
+			r >= inst->formulas[i].rowStart && r < inst->formulas[i].rowEnd &&
+			c >= inst->formulas[i].colStart && c < inst->formulas[i].colEnd
+		) {
+			return (inst->formulas[i].formula)(inst->closure, r, c);
+		}
+	}
+	return new_val();
+}
+
+void setRange(value_p val, struct var_instance *inst) {
+	subrange_p sr = malloc(sizeof(struct subrange_t));
+	sr->offsetCol = 0;
+	sr->offsetRow = 0;
+	sr->subrangeCol = inst->cols;
+	sr->subrangeRow = inst->rows;
+	sr->range = inst;
+	val->subrange = sr;
+	val->flags = FLAG_SUBRANGE;
+}
+
+value_p getSize(struct var_instance *inst) {
+	value_p res = malloc(sizeof(struct value_t));
+	setNumeric(res, 1); /*TODO*/
+	return res;
+}
+
+value_p deepCopy(value_p value) {
+	value_p _new = new_val();
+	if(value->flags == FLAG_EMPTY) {}
+	else if(value->flags == FLAG_STRING) {
+		_new->flags = FLAG_STRING;
+		_new->str = malloc(sizeof(struct string_t));
+		memcpy(_new->str->text, value->str->text, value->str->length);
+		_new->str->length = value->str->length;
+	}
+	else if(value->flags == FLAG_NUMBER) {
+		_new->flags = FLAG_NUMBER;
+		_new->numericVal = value->numericVal;
+	}
+	else if(value->flags == FLAG_SUBRANGE) {
+		struct var_instance *v = malloc(sizeof(struct subrange_t));
+		int cols = value->subrange->subrangeCol;
+		int rows = value->subrange->subrangeRow;
+		v->name = "COPYCAT";
+		v->formulas = NULL;
+		v->status = malloc(sizeof(char *) * rows * cols);
+		v->values = malloc(sizeof(value_p) * rows * cols);
+		v->closure = NULL;
+		int i,j;
+		for(i = 0; i < rows; i++) {
+			for(j = 0; j < cols; j++) {
+				int offset = i * rows + j;
+				*(v->status + offset) = CALCULATED;
+				/*TODO: eval lazzzy*/
+				*(v->values + offset) = getVal(value->subrange->range, i + value->subrange->offsetRow, j + value->subrange->offsetCol);
+			}
+		}
+		setRange(_new, v);
+	}
+	return _new;
+}
+
+value_p clone_value(value_p old_value) {
+	value_p new_value = (value_p) malloc(sizeof(struct value_t));
+	new_value->flags = old_value->flags;
+	switch (new_value->flags) {
+		case FLAG_EMPTY:
+			break;
+		case FLAG_NUMBER:
+			new_value->numericVal = old_value->numericVal;
+			break;
+		case FLAG_STRING:
+			new_value->str = old_value->str;
+			new_value->str->refs++;
+			break;
+		case FLAG_SUBRANGE:
+			new_value->subrange = (subrange_p) malloc(sizeof(struct subrange_t));
+			memcpy(new_value->subrange, old_value->subrange, sizeof(struct subrange_t));
+			new_value->subrange->range->closure->refcount++; /* Not sure about this one */
+			break;
+		default:
+			fprintf(stderr, "clone_value(%p): Illegal value of flags: %c\n", old_value, new_value->flags);
+			exit(-1);
+			break;
+	}
+	return new_value;
+}
+
+void delete_string_p(string_p old_string) {
+	old_string->refs--;
+	if (old_string->refs == 0) {
+		/* free(old_string); */
+	}
+}
+
+void delete_subrange_p(subrange_p old_subrange) {
+	old_subrange->range->closure->refcount--;
+	free(old_subrange);
+}
+
+void delete_value(value_p old_value) {
+	switch (old_value->flags) {
+		case FLAG_EMPTY:
+			break;
+		case FLAG_NUMBER:
+			break;
+		case FLAG_STRING:
+			delete_string_p(old_value->str); /* doesn't do anything besides decrement the ref count now */
+			break;
+		case FLAG_SUBRANGE:
+			delete_subrange_p(old_value->subrange);
+			break;
+		default:
+			fprintf(stderr, "delete_value(%p): Illegal value of flags: %c\n", old_value, old_value->flags);
+			exit(-1);
+			break;
+	}
+}
+
+value_p getVal(struct var_instance *inst, int r, int c) {
+	/* If we're going to return new_val() then we have to
+	 * do clone_value(). Otherwise the receiver won't know
+	 * whether or not they can free the value_p they get back.
+	 * I think this should return, dangerously, return NULL if it's
+	 * invalid, and the callers will have to be careful to check the value.
+	 * The alternative is to always clone_value - safer, but much slower
+	 * and makes our memory issues even bigger.
+	 * Right now there are only a few places that call this. */
+
+	if(!assertInBounds(inst, r, c)) return NULL;
+	int cell_number = r * inst->cols + c;
+	char cell_status = inst->status[cell_number];
+	switch(cell_status) {
+		case NEVER_EXAMINED:
+			inst->status[cell_number] = IN_PROGRESS;
+			inst->values[cell_number] = calcVal(inst, r, c);
+			inst->status[cell_number] = CALCULATED;
+			break;
+		case IN_PROGRESS:
+			fprintf(stderr, "EXITING - Circular reference in %s[%d,%d]\n", inst->name, r, c);
+			exit(-1);
+			break;
+		case CALCULATED:
+			if (inst->values[cell_number] == NULL) {
+				fprintf(stderr, "Supposedly, %s[%d,%d] was already calculated, but there is a null pointer there.\n", inst->name, r, c);
+				fprintf(stderr, "Attempting to print contents of the variable instance where this occurred:\n");
+				fflush(stdout);
+				debug_print_varinst(inst);
+				exit(-1);
+			}
+			break;
+		default:
+			fprintf(stderr, "Unrecognized cell status %d (row %d, col %d)!\n", cell_status, r, c);
+			fprintf(stderr, "Attempting to print contents of the variable instance where this occurred:\n");
+			fflush(stdout);
+			debug_print_varinst(inst);
+			exit(-1);
+			break;
+	}
+	return inst->values[cell_number];
+// 	char *status = inst->status + offset;
+// 	value_p return_val;
+// 	if(*status & IN_PROGRESS) {
+// 		/* TODO: Circular dependency. Possibly throw? */
+// 		return_val = new_val();
+// 	} else if ((~(*status)) & CALCULATED) { /* value not calculated */
+// 		value_p val = calcVal(inst, x, y);
+// 		inst->values[offset] = val;
+// 		*status = (*status && !IN_PROGRESS) | CALCULATED;
+// 		return_val = val;
+// 	} else {
+// 		return_val = inst->values[offset];
+// 	}
+// 	while(return_val->flags == FLAG_SUBRANGE && return_val->subrange->subrangeRow == 1 && return_val->subrange->subrangeCol == 1) {
+// 		return_val = getVal(return_val->subrange->range, return_val->subrange->offsetRow, return_val->subrange->offsetCol);
+// 	}
+// //	debug_print_varinst(inst);
+// 	return return_val;
+}
+\end{lstlisting}
+\section{stdlib.xtnd}
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_get_stdin();
+  extend_get_stdout();
+  extend_get_stderr();
+  extend_readline(file_handle);
+  extend_write(file_handle, str);
+  extend_current_hour();
+  to_string(x);
+}
+
+global STDIN := extend_get_stdin();
+global STDOUT := extend_get_stdout();
+global STDERR := extend_get_stderr();
+\end{lstlisting}

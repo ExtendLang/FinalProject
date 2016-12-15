@@ -83,8 +83,8 @@ Below is a short tour of the features of Extend. More detail can be found in the
 	\textbf{Note} that we declare a variable and assign it a value together with \texttt{:=}. If the variable already exists, \texttt{=} will suffice.
 	More information about Extend's primitive data types can be found in the Language Reference Manual.
 
-		\subsubsection{The type() function}
-		Extend offers a \texttt{type(expr)} function, which takes and expression and returns Number, String, Range, or Empty.
+		\subsubsection{The typeof function}
+		Extend offers a \texttt{typeof(expr)} function, which takes and expression and returns Number, String, Range, or Empty.
 
 	\subsection{Operators}
 	Extend includes a comprehensive set of operators. Each category is listed in order of precedence. A more detailed explanation of each operator can be found in the Language Reference Manual.
@@ -214,20 +214,13 @@ While their usage will be covered in more length in the Language Reference Manua
 			return "Hello " + toString(14); \\ "Hello 14"
 		\end{lstlisting}
 
-		\subsubsection{Print Function}
-		Extend allows the reader to easily print to stdout. It is called with the \texttt{print} signature, and takes two parameters - the location to print to, and the string to print.
-
-		\begin{lstlisting}
-			print(STDOUT, "Hello World\n") \\ Prints Hello World to stdout
-		\end{lstlisting}
-
 		\subsubsection{Math Functions}
 		Borrowing from C's standard library math functions, Extend offers: \texttt{sin, cos, tan, acos, asin, atan, sinh, cosh, tanh, exp, log, log10, sqrt, ceil, fabs} and \texttt{floor}.
 
 		\begin{lstlisting}
 			main(args){
 				bar := sqrt(16);
-				return print(STDOUT, toString(bar)) -> 0; \\ Prints 4 to stdout
+				return write(STDOUT, toString(bar)) -> 0; \\ Prints 4 to stdout
 			}
 		\end{lstlisting}
 
@@ -236,7 +229,7 @@ While their usage will be covered in more length in the Language Reference Manua
 
 	\begin{lstlisting}
 		main(args){
-		  return print(STDOUT, read(open("test_file.txt", "r"),5)) -> 0;
+		  return write(STDOUT, read(open("test_file.txt", "r"),5)) -> 0; \\ Writes 5 characters from test_file.txt to stdout
 		}
 	\end{lstlisting}
 

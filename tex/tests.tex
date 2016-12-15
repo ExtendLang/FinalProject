@@ -1,0 +1,2733 @@
+\chapter{Tests and Output}
+
+
+\medskip \noindent \texttt{helloworld.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+	print(a,b);
+		printv(a,b);
+}
+
+[1,1] main(args) {
+  foo := printv(1,"Hello World\n") -> 0;
+  return foo;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{helloworld.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+Hello World
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-access-cell.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args) {
+  [2,2] foo := "string";
+  bar := foo[1,1];
+  return print(1,to_string(bar)) -> print(1, "\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-access-cell.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+string
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-access-column-cell.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args) {
+  [4,1] foo := "string";
+  return print(1,to_string( foo[1,0])+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-access-column-cell.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+string
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-access-hashtag-multi-dim.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args) {
+  [4,4] foo := "string";
+  return print(1,to_string( #foo)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-access-hashtag-multi-dim.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+string
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-access-hashtag-single-dim.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args) {
+  [1,1] foo := "string";
+  return print(1,to_string( #foo)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-access-hashtag-single-dim.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+string
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-access-relative-range.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args) {
+  [4,4] foo := "string";
+  return print(1,to_string( foo[,[1]])+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-access-relative-range.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+string
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-acos.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_acos(a);
+  printd(a,b);
+}
+
+[1,1] main(args) {
+  return printd(1, extend_acos(0.0)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-acos.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+1.570796
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-addition.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( 5 + 7)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-addition.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+12
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-addition-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty + 5)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-addition-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-asin.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_asin(a);
+  printd(a,b);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, extend_asin(0.5)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-asin.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+0.523599
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-atan.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_atan(a);
+  printd(a,b);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, extend_atan(45.0)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-atan.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+1.548578
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-basic-func.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args) {
+  foo := 2;
+  bar := 3;
+  foobar := foo + bar;
+  return print(1,to_string( 0)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-basic-func.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+0
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-and.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( 23 & 12)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-and.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+4
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-and-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty & 4)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-and-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-left.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( 14 << 2)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-left.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+56
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-left-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty >> 1)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-left-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-or.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( 14 | 12)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-or.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+14
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-or-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty | 2)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-or-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-right.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( 12 >> 2)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-right.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+3
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-right-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty >> 2)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-right-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-xor.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( 14 ^ 12)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-xor.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+2
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-xor-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty ^ 2)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-xor-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-boolean-equals.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( 5 == 6)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-boolean-equals.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+0
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-boolean-equals-both-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty == empty)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-boolean-equals-both-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+1
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-boolean-equals-harder.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  printv(a,b);
+  printd(a,b);
+}
+
+main([1,1] args){
+	return
+    printv(1, "True cases for ==\n") ->
+    printd(1,  (5 == 5)) ->
+    printd(1,  (5 == 5.0)) ->
+    printd(1,  (0.5 == 5e-1)) ->
+    printd(1,  (50 == 5e1)) ->
+    printd(1,  2 + 2 == 4) ->
+    printd(1,  "foo" == "foo") ->
+    printd(1,  "" == "") ->
+    printd(1,  empty == empty) ->
+    printd(1,  empty == !empty) ->
+    printd(1,  !"foo" == !"bar") ->
+    printd(1, (2 ? 3 : 4) == ("foo" ? 3 : "not 4") ) ->
+
+    printv(1, "\nFalse cases for ==\n") ->
+    printd(1,  (5 == 6)) ->
+    printd(1,  (5 == 5.01)) ->
+    printd(1,  (0.5 == 5e-2)) ->
+    printd(1,  (50 == 5e2)) ->
+    printd(1,  2 + 2 == 5) ->
+    printd(1,  "foo" == "bar") ->
+    printd(1,  "" == "foo") ->
+    printd(1,  "" == empty) ->
+    printd(1,  2 == empty) ->
+    printd(1,  empty == 2) ->
+    printd(1, (2 ? 3 : 4) == ("foo" ? "not 3" : 4) ) ->
+
+    printv(1, "\nTrue cases for !=\n") ->
+    printd(1,  (5 != 6)) ->
+    printd(1,  (5 != 5.01)) ->
+    printd(1,  (0.5 != 5e-2)) ->
+    printd(1,  (50 != 5e2)) ->
+    printd(1,  2 + 2 != 5) ->
+    printd(1,  "foo" != "bar") ->
+    printd(1,  "" != "foo") ->
+    printd(1,  "" != empty) ->
+    printd(1,  2 != empty) ->
+    printd(1,  empty != 2) ->
+    printd(1, (2 ? 3 : 4) != ("foo" ? "not 3" : 4) ) ->
+
+    printv(1, "\nFalse cases for !=\n") ->
+    printd(1,  (5 != 5)) ->
+    printd(1,  (5 != 5.0)) ->
+    printd(1,  (0.5 != 5e-1)) ->
+    printd(1,  (50 != 5e1)) ->
+    printd(1,  2 + 2 != 4) ->
+    printd(1,  "foo" != "foo") ->
+    printd(1,  "" != "") ->
+    printd(1,  empty != empty) ->
+    printd(1,  empty != !empty) ->
+    printd(1,  !"foo" != !"bar") ->
+    printd(1, (2 ? 3 : 4) != ("foo" ? 3 : "not 4") ) ->
+
+    0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-boolean-equals-harder.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+True cases for ==
+1.000000
+1.000000
+1.000000
+1.000000
+1.000000
+1.000000
+1.000000
+1.000000
+1.000000
+1.000000
+1.000000
+
+False cases for ==
+0.000000
+0.000000
+0.000000
+0.000000
+0.000000
+0.000000
+0.000000
+0.000000
+0.000000
+0.000000
+0.000000
+
+True cases for !=
+1.000000
+1.000000
+1.000000
+1.000000
+1.000000
+1.000000
+1.000000
+1.000000
+1.000000
+1.000000
+1.000000
+
+False cases for !=
+0.000000
+0.000000
+0.000000
+0.000000
+0.000000
+0.000000
+0.000000
+0.000000
+0.000000
+0.000000
+0.000000
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-boolean-equals-one-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty == 5)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-boolean-equals-one-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+0
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-boolean-logical-not-equals.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( 6 != 7)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-boolean-logical-not-equals.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+1
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-boolean-logical-not-equals-both-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty != empty)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-boolean-logical-not-equals-both-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+0
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-boolean-logical-not-equals-one-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty != 5)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-boolean-logical-not-equals-one-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+1
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-calling-func-from-import.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+import "../../samples/gcd_func.xtnd";
+
+main([1,n] args){
+  return print(1,to_string( gcd(70, 55))+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-calling-func-from-import.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+5
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-ceil.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_ceil(a);
+  printd(a,b);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, extend_ceil(10.45)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-ceil.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+11.000000
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-cos.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_cos(a);
+  printd(a,b);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, extend_cos(45.0)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-cos.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+0.525322
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-cosh.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_cosh(a);
+  printd(a,b);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, extend_cosh(45.0)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-cosh.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+17467135528742547456.000000
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-division.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	/* Should evaluate to 4 */
+	return print(1,to_string( 20 / 5)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-division.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+4
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-division-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args){
+	/* Should return empty */
+	return print(1,to_string( empty / 5)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-division-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-exp.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_exp(a);
+  printd(a,b);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, extend_exp(2.0)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-exp.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+7.389056
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-fabs.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_fabs(a);
+  printd(a,b);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, extend_fabs(-45.0)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-fabs.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+45.000000
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-file-close.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_open(a,b);
+  extend_close(a);
+  print(a,b);
+}
+
+[1,1] main(args){
+  return extend_close(extend_open("testcases/assets/test_file.txt", "r")) -> print(1,"Made it this far\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-file-close.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+Made it this far
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-file-read.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_open(a,b);
+  extend_read(a,b);
+  extend_close(a);
+  print(a,b);
+}
+
+[1,1] main(args){
+  return print(1, extend_read(extend_open("testcases/assets/test_file.txt", "r"),5)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-file-read.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+This \end{lstlisting}
+
+
+\medskip \noindent \texttt{test-file-write.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_open(a,b);
+  extend_write(a,b);
+  extend_close(a);
+  print(a,b);
+}
+
+[1,1] main(args){
+  return extend_close(extend_write(extend_open("testcases/assets/test_file_write.out", "w"), "Hello"))
+          -> print(1,"Made it this far\n")
+          -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-file-write.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+Made it this far
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-floor.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_floor(a);
+  printd(a,b);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, extend_floor(10.45)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-floor.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+10.000000
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-func-params.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args) {
+  return print(1,to_string( foo("string"))+"\n") -> 0;
+}
+[1,1] foo([1,1] arg) {
+  return arg;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-func-params.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+string
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-func-params-omit-dim.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args) {
+  return print(1,to_string( foo("string"))+"\n") -> 0;
+}
+foo([1,1] arg) {
+  return arg;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-func-params-omit-dim.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+string
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-global-hello.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+	print(a,b);
+		printv(a,b);
+}
+
+bar() {
+	foo := 5;
+	return 2;
+}
+
+global foo := printv(1,"Hello Globals!\n") -> 0;
+
+[1,1] main(args) {
+  return foo;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-global-hello.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+Hello Globals!
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-global-masking.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+	print(a,b);
+		printv(a,b);
+}
+
+bar() {
+	foo := 5;
+	return 2;
+}
+
+global foo := printv(1,"Hello Globals!\n") -> 0;
+
+[1,1] main(args) {
+	foo := printv(1,"Hello Locals!\n") -> 0;
+  return foo;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-global-masking.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+Hello Locals!
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-globals-between-imports.xtnd}
+
+
+\begin{lstlisting}
+import "../../testcases/assets/string.xtnd";
+global foo;
+global [2, 5] bar;
+import "../../testcases/assets/string.xtnd";
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-globals-between-imports.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+Hello
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-greater-than.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( 6 > 5)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-greater-than.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+1
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-greater-than-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty > 5)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-greater-than-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-greater-than-or-equal.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( 7 >= 7)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-greater-than-or-equal.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+1
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-greater-than-or-equal-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty >= 7)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-greater-than-or-equal-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-less-than.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( 6 < 7)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-less-than.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+1
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-less-than-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty > 5)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-less-than-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-less-than-or-equal.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( 7 <= 5)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-less-than-or-equal.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+0
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-less-than-or-equal-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty <= 8)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-less-than-or-equal-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-log.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_log(a);
+  printd(a,b);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, extend_log(10.0)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-log.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+2.302585
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-log10.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_log10(a);
+  printd(a,b);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, extend_log10(100.0)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-log10.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+2.000000
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-logical-and.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( 1 && 6)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-logical-and.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+1
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-logical-and-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty && 1)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-logical-and-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-logical-not.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( !5)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-logical-not.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+0
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-logical-not-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( !empty)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-logical-not-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-logical-or.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( 5 || 6)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-logical-or.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+1
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-logical-or-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty || 4)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-logical-or-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-modulo.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args){
+	/* Should return 1 */
+	return print(1,to_string( 5 % 4)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-modulo.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+1
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-modulo-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args){
+	/* Should return empty */
+	return print(1,to_string( empty % 5)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-modulo-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-multiple-imports.xtnd}
+
+
+\begin{lstlisting}
+import "../../testcases/assets/string.xtnd";
+import "../../testcases/assets/string.xtnd";
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-multiple-imports.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+Hello
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-multiplication.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args){
+	/* Should evaluate to 35 */
+	return print(1,to_string( 7 * 5)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-multiplication.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+35
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-multiplication-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args){
+	/* Should evaluate to empty */
+	return print(1,to_string( empty * 5)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-multiplication-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-parse-error.xtnd}
+
+
+\begin{lstlisting}
+[1,1] main(args){
+  foo := 5$5;
+  return foo;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-parse-error.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+Syntax error in "./testcases/inputs_regression/test_parse_error.xtnd": Invalid character: $
+Line 2 at character 11
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-parse-error-after-multiline-comment.xtnd}
+
+
+\begin{lstlisting}
+[1,1] main(args){
+/* This is a comment spanning multiple lines.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+20 of them, in fact. */
+  foo := 5/5;
+  bar := $$$$
+  return foo;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-parse-error-after-multiline-comment.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+Syntax error in "./testcases/inputs_regression/test_parse_error_after_multiline_comment.xtnd": Invalid character: $
+Line 23 at character 10
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-parse-error-comment.xtnd}
+
+
+\begin{lstlisting}
+[1,1] main(args){
+  foo := 5/5;
+  /* Test comment */ foo := 5$5;
+  return foo;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-parse-error-comment.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+Syntax error in "./testcases/inputs_regression/test_parse_error_comment.xtnd": Invalid character: $
+Line 3 at character 30
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-parse-error-missing-semicolon.xtnd}
+
+
+\begin{lstlisting}
+main([1,1] args){
+	x := switch() {
+		case 1 > 2: 100;
+		case 3 > 0: 200
+	};
+	return printf(1,toString(x)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-parse-error-missing-semicolon.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+Syntax error in "./testcases/inputs_regression/test_parse_error_missing_semicolon.xtnd": 
+Line 5 at character 2
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-parse-error-newlines.xtnd}
+
+
+\begin{lstlisting}
+[1,1] main(args){
+  foo := 5/5;
+  bar := "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"$5;
+  return foo;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-parse-error-newlines.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+Syntax error in "./testcases/inputs_regression/test_parse_error_newlines.xtnd": Invalid character: $
+Line 3 at character 52
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-parse-error-string.xtnd}
+
+
+\begin{lstlisting}
+[1,1] main(args){
+  foo := "Hello";$$$;
+  return foo;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-parse-error-string.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+Syntax error in "./testcases/inputs_regression/test_parse_error_string.xtnd": Invalid character: $
+Line 2 at character 18
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-power.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args){
+	/* Should return 216 */
+	return print(1,to_string( 6**3)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-power.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+216
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-power-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args){
+	/* Should return empty */
+	return print(1,to_string( empty**5)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-power-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-print-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args) {
+  foo := empty;
+  return print(1,to_string( foo)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-print-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-print-nums.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args) {
+  foo := 1;
+  return print(1,to_string( foo)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-print-nums.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+1
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-print-str.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args) {
+  foo := "string";
+  return print(1,to_string( foo)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-print-str.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+string
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-ref-between-globals.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+global [2,2] foo;
+global [2,2] bar;
+main([1,n] args) {
+  foo := 1;
+  bar := foo;
+  return print(1,to_string( bar)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-ref-between-globals.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+1
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-short-circuiting-and.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+}
+
+main([1,1] args){
+	return 0 && print(1,"FAIL\n") -> print(1,"PASS\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-short-circuiting-and.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+PASS
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-short-circuiting-and2.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+}
+
+main([1,1] args){
+	return 1 && print(1,"PASS1\n") -> print(1,"PASS2\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-short-circuiting-and2.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+PASS1
+PASS2
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-short-circuiting-or.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+}
+
+main([1,1] args){
+	return 0 || print(1,"PASS1\n") -> print(1,"PASS2\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-short-circuiting-or.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+PASS1
+PASS2
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-short-circuiting-or2.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+}
+
+main([1,1] args){
+	return 1 || print(1,"FAIL\n") -> print(1,"PASS\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-short-circuiting-or2.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+PASS
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-sin.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_sin(a);
+  printd(a,b);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, extend_sin(45.0)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-sin.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+0.850904
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-sin-through-function.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_sin(a);
+  printd(a,b);
+}
+
+internal_sin(x,y,z) {
+  return extend_sin(z);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, internal_sin(1,2,45.0)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-sin-through-function.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+0.850904
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-sin-through-function-and-global.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_sin(a);
+  printd(a,b);
+}
+
+global theta := 45.0;
+
+internal_sin(x,y,z) {
+  return extend_sin(z);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, internal_sin(1,2,theta)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-sin-through-function-and-global.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+0.850904
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-single-import.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+import "../../samples/gcd_func.xtnd";
+
+main([1,n] args) {
+  return print(1, to_string(gcd(70, 55)) + "\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-single-import.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+5
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-sinh.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_sinh(a);
+  printd(a,b);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, extend_sinh(45.0)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-sinh.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+17467135528742547456.000000
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-sqrt.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_sqrt(a);
+  printd(a,b);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, extend_sqrt(9.0)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-sqrt.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+3.000000
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-string-concatenation.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+		printv(a,b);
+}
+
+[1,1] main(args) {
+  foo :=
+		printv(1,"Hello " + "World\n") ->
+		printv(1,"Hello " + "World" + "\n") ->
+		printv(1,("Hello " + "World") + ("" + "\n")) ->
+		 0;
+  return foo;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-string-concatenation.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+Hello World
+Hello World
+Hello World
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-subtraction.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( 7 - 5)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-subtraction.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+2
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-subtraction-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty - 2)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-subtraction-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v1.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	x := switch(1) {
+		case 1: 100;
+		case 2: 200;
+		default: 300;
+	};
+	return print(1,to_string(x)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v1.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+100
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v10.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  printd(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	x := switch {
+		case 0: 100;
+		case "also true": 200;
+    default: 99;
+	};
+	return printd(1,x) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v10.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+200.000000
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v11.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  printd(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	x := switch {
+		case 0: 100;
+    default: 99;
+	};
+	return printd(1,x) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v11.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+99.000000
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v2.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	x := switch(2) {
+		case 1: 100;
+		case 2: 200;
+		default: 300;
+	};
+	return print(1,to_string(x)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v2.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+200
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v3.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	x := switch(3) {
+		case 1: 100;
+		case 2: 200;
+		default: 300;
+	};
+	return print(1,to_string(x)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v3.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+300
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v4.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	x := switch(2) {
+		case 1, 2: 100;
+		default: 300;
+	};
+	return print(1,to_string(x)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v4.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+100
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v5.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	x := switch(3) {
+		case 1, 2: 100;
+		default: 300;
+	};
+	return print(1,to_string(x)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v5.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+300
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v6.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	x := switch(3) {
+		case 1, 2: 100;
+		case 0, 3: 200;
+		default: 300;
+	};
+	return print(1,to_string(x)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v6.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+200
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v7.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	x := switch(4) {
+		case 1, 2: 100;
+		case 0, 3: 200;
+	};
+	return print(1,to_string(x)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v7.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v8.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	x := switch() {
+		case 1 > 2: 100;
+		case 3 > 0: 200;
+	};
+	return print(1,to_string(x)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v8.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+200
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v9.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  printd(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	x := switch {
+		case "true": 100;
+		case "also true": 200;
+	};
+	return printd(1,x) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-switch-v9.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+100.000000
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-tan.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_tan(a);
+  printd(a,b);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, extend_tan(45.0)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-tan.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+1.619775
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-tanh.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  extend_tanh(a);
+  printd(a,b);
+}
+
+[1,1] main([1,n] args) {
+  return printd(1, extend_tanh(45.0)) -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-tanh.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+1.000000
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-ternary-conditional.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string(5 ? 2 : 3) + "\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-ternary-conditional.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+2
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-ternary-conditional-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,1] args){
+	return print(1,to_string( empty ? 5 : 6)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-ternary-conditional-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-unary-negation.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args){
+	/* Should return -33 */
+	return print(1,to_string( -33)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-unary-negation.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+-33
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-unary-negation-empty.xtnd}
+
+
+\begin{lstlisting}
+extern "stdlib.o" {
+  print(a,b);
+  to_string(a);
+}
+
+main([1,n] args){
+	return print(1,to_string( -empty)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-unary-negation-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
+
+

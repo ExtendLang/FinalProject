@@ -1,0 +1,38 @@
+\chapter{Testing}
+Due to Extend being a large undertaking, we took steps to ensure that all features were working as the design of the language intended.
+
+\medskip \noindent
+This was done through implementing test cases that isolated specific aspects of the Extend language to ensure that each feature worked correctly. For basic components, we wrote a plethora of tests to illustrate functionality. For undertakings that required more debate on the design of the language, other tests were created and modified throughout development.
+
+\section{Feature Integration \& Testing}
+Development of new features naturally means that they must be deemed legal by the scanner, parser, semantic analyzer, and code generator. As we developed new features, the process was roughly as follows:
+  \begin{enumerate}
+    \item Write a simple test that illustrated the feature to test.
+    \item Write the expected output of the aforementioned test to a text file.
+    \item Confirm that the scanner consumes the tokens related to the feature.
+    \item Confirm that the parser grammar has been adjusted to accomodate the new feature.
+    \item Confirm that the semantic analyzer and transformer can properly identify and check the new feature code.
+    \item Confirm that code generation generates the appropriate LLVM IR for the new features - such as allocating memory, building calls, and more.
+    \item Ensure that the test written can write its output to stdout, to be compared with expected output.
+    \item Compile and test the code to ensure that the code has worked to the team's expectations.
+  \end{enumerate}
+
+  \medskip \noindent
+  Earlier in the development process, we tested the front end of our compiler by JSON-ifying the abstract syntax tree, printing it, and examinining it. As we settled into full-fledged development, we would test with a full-feature regression test suite.
+  Later in the semester, JSON-ifying still proved to be useful, as it gave us the option to print debug statements if needed.
+
+\section{Regression Test Suite}
+Extend's test suite is executable through the \texttt{testscript.sh} script at the top level of the project. There are over 100 integration test files for various features of the Extend language, and a corresponding file with their expected output to \texttt{stdout}. This is to ensure that the successful implementation of one feature does not impact that of others.
+
+\medskip \noindent
+Regression tests were placed in the \texttt{testcases/inputs\_regression} directory. Tests that did not pass at the time were placed in the \texttt{testcases/inputs} directory. The test script compiles and executes each test, and compares it with the corresponding expected output file, living in the \texttt{testcases/expected} directory. Whenever a test passed in \texttt{inputs}, it was automatically moved over to \texttt{inputs\_regression}.
+
+
+\medskip \noindent
+\textbf{Note:} We have added a full test listing at the end of this document. Please refer to the chapter titled "Test Listing" for more detail.
+
+  \subsection{Integration with Travis CI}
+  The aforementioned test suite is run by Travis CI in the event that the Extend compiler is successfully built; otherwise, the build will fail and exit. In our development workflow, checking the logs during build failures sometimes revealed that tests in the regression test suite did not succeed as expected. This integration kept the far-reaching effects of newly introduced features entirely transparent throughout the process.
+
+  \medskip \noindent
+  Using Travic CI allowed us to maintain the working ability of our compiler, as it ensured that every new feature pushed to the master branch would still result in a successful build. This proved to be invaluable when testing the compiler at a macro-level, or providing Jacob, our TA, with up-to-date demonstrations.

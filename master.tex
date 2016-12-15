@@ -7,8 +7,20 @@
 \usepackage{fullpage}
 \usepackage{listings}
 \usepackage{titlesec}
+\usepackage{tabularx}
+\usepackage{amsmath}
 \usepackage{color}
+\usepackage{siunitx}
+\usepackage{mathrsfs}
+\usepackage{setspace}
+\usepackage{fixltx2e}
 \usepackage{hyperref}
+\usepackage{csquotes}
+\usepackage{colortbl}
+\usepackage{indentfirst}
+\usepackage[T1]{fontenc}
+\usepackage{float}
+\usepackage{longtable}
 \setcounter{secnumdepth}{1} % only chapter and sections will be numbered
 \setcounter{tocdepth}{3}    % entries down to \subsubsections in the TOC
 
@@ -19,7 +31,8 @@
 		breaklines=true,
 		numbers=left,
 		firstnumber=1,
-    tabsize=2
+    tabsize=2,
+		inputpath=Extend
 }
 
 \definecolor{darkblue}{rgb}{0.089,0.21,0.363}
@@ -48,7 +61,7 @@
 
   \input{tex/introduction}
   %\input{tex/tutorial}
-  %\input{tex/lrm}
+  \input{tex/lrm}
   \input{tex/plan}
   %\input{tex/architecture}
   \input{tex/testing}

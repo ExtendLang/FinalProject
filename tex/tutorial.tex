@@ -201,6 +201,21 @@ Below is a short tour of the features of Extend. More detail can be found in the
 		import "../programs/helloworld.xtnd"
 	\end{lstlisting}
 
+	\subsection{Lazy Evaluation}
+	In Extend, certain values are not invoked until they are explicitly needed by the program, which creates series of dependent essential values. For example:
+
+	\begin{lstlisting}
+		main(args){
+			write(STDOUT, "something");// this won't print
+			return 0;
+		}
+	\end{lstlisting}
+	\begin{lstlisting}
+		main(args){
+			return write(STDOUT, "something") -> 0;// this will print
+		}
+	\end{lstlisting}
+
 \section{Standard Library Functions}
 Extend offers an assortment of standard library functions. Extend imports \texttt{stdlib.xtnd}, which has aggregated all the standard library functions for the user's disposal.
 

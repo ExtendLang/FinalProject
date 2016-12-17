@@ -5,12 +5,7 @@
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-	print(a,b);
-		printv(a,b);
-}
-
-[1,1] main(args) {
+main(args) {
   foo := printv(1,"Hello World\n") -> 0;
   return foo;
 }
@@ -29,11 +24,6 @@ Hello World
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args) {
   [2,2] foo := "string";
   bar := foo[1,1];
@@ -54,11 +44,6 @@ string
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args) {
   [4,1] foo := "string";
   return print(1,to_string( foo[1,0])+"\n") -> 0;
@@ -78,11 +63,6 @@ string
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args) {
   [4,4] foo := "string";
   return print(1,to_string( #foo)+"\n") -> 0;
@@ -102,11 +82,6 @@ string
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args) {
   [1,1] foo := "string";
   return print(1,to_string( #foo)+"\n") -> 0;
@@ -126,11 +101,6 @@ string
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args) {
   [4,4] foo := "string";
   return print(1,to_string( foo[,[1]])+"\n") -> 0;
@@ -150,13 +120,8 @@ string
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_acos(a);
-  printd(a,b);
-}
-
-[1,1] main(args) {
-  return printd(1, extend_acos(0.0)) -> 0;
+main(args) {
+  return printd(1, acos(0.0)) -> 0;
 }
 \end{lstlisting}
 
@@ -173,12 +138,7 @@ extern "stdlib.o" {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
-main([1,1] args){
+main(args){
 	return print(1,to_string( 5 + 7)+"\n") -> 0;
 }
 \end{lstlisting}
@@ -196,11 +156,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty + 5)+"\n") -> 0;
 }
@@ -219,13 +174,8 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_asin(a);
-  printd(a,b);
-}
-
-[1,1] main([1,n] args) {
-  return printd(1, extend_asin(0.5)) -> 0;
+main([1,n] args) {
+  return printd(1, asin(0.5)) -> 0;
 }
 \end{lstlisting}
 
@@ -242,13 +192,8 @@ extern "stdlib.o" {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_atan(a);
-  printd(a,b);
-}
-
-[1,1] main([1,n] args) {
-  return printd(1, extend_atan(45.0)) -> 0;
+main([1,n] args) {
+  return printd(1, atan(45.0)) -> 0;
 }
 \end{lstlisting}
 
@@ -265,11 +210,6 @@ extern "stdlib.o" {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args) {
   foo := 2;
   bar := 3;
@@ -287,15 +227,32 @@ main([1,n] args) {
 \end{lstlisting}
 
 
+\medskip \noindent \texttt{test-bitnot.xtnd}
+
+
+\begin{lstlisting}
+main(args) {
+  return print_endline(~{"a",1}) -> print_endline(~1) -> print_endline(~0) -> print_endline(~"a") -> print_endline(empty);
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitnot.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+-2
+-1
+empty
+empty
+\end{lstlisting}
+
+
 \medskip \noindent \texttt{test-bitwise-and.xtnd}
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( 23 & 12)+"\n") -> 0;
 }
@@ -314,11 +271,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty & 4)+"\n") -> 0;
 }
@@ -337,11 +289,6 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( 14 << 2)+"\n") -> 0;
 }
@@ -360,11 +307,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty >> 1)+"\n") -> 0;
 }
@@ -379,15 +321,48 @@ empty
 \end{lstlisting}
 
 
+\medskip \noindent \texttt{test-bitwise-not.xtnd}
+
+
+\begin{lstlisting}
+main([1,1] args){
+	/* Should return -89 */
+	return print(1,to_string( ~88)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-not.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+-89
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-not-empty.xtnd}
+
+
+\begin{lstlisting}
+main([1,1] args){
+	/* Should return empty */
+	return print(1,to_string( ~empty)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-bitwise-not-empty.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+empty
+\end{lstlisting}
+
+
 \medskip \noindent \texttt{test-bitwise-or.xtnd}
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( 14 | 12)+"\n") -> 0;
 }
@@ -406,11 +381,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty | 2)+"\n") -> 0;
 }
@@ -429,11 +399,6 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( 12 >> 2)+"\n") -> 0;
 }
@@ -452,11 +417,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty >> 2)+"\n") -> 0;
 }
@@ -475,11 +435,6 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( 14 ^ 12)+"\n") -> 0;
 }
@@ -498,11 +453,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty ^ 2)+"\n") -> 0;
 }
@@ -521,11 +471,6 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( 5 == 6)+"\n") -> 0;
 }
@@ -544,11 +489,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty == empty)+"\n") -> 0;
 }
@@ -567,11 +507,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  printv(a,b);
-  printd(a,b);
-}
-
 main([1,1] args){
 	return
     printv(1, "True cases for ==\n") ->
@@ -693,11 +628,6 @@ False cases for !=
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty == 5)+"\n") -> 0;
 }
@@ -716,11 +646,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( 6 != 7)+"\n") -> 0;
 }
@@ -739,11 +664,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty != empty)+"\n") -> 0;
 }
@@ -762,11 +682,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty != 5)+"\n") -> 0;
 }
@@ -785,11 +700,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 import "../../samples/gcd_func.xtnd";
 
 main([1,n] args){
@@ -810,13 +720,8 @@ main([1,n] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_ceil(a);
-  printd(a,b);
-}
-
-[1,1] main([1,n] args) {
-  return printd(1, extend_ceil(10.45)) -> 0;
+main([1,n] args) {
+  return printd(1, ceil(10.45)) -> 0;
 }
 \end{lstlisting}
 
@@ -833,13 +738,8 @@ extern "stdlib.o" {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_cos(a);
-  printd(a,b);
-}
-
-[1,1] main([1,n] args) {
-  return printd(1, extend_cos(45.0)) -> 0;
+main([1,n] args) {
+  return printd(1, cos(45.0)) -> 0;
 }
 \end{lstlisting}
 
@@ -856,13 +756,8 @@ extern "stdlib.o" {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_cosh(a);
-  printd(a,b);
-}
-
-[1,1] main([1,n] args) {
-  return printd(1, extend_cosh(45.0)) -> 0;
+main([1,n] args) {
+  return printd(1, cosh(45.0)) -> 0;
 }
 \end{lstlisting}
 
@@ -879,11 +774,6 @@ extern "stdlib.o" {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	/* Should evaluate to 4 */
 	return print(1,to_string( 20 / 5)+"\n") -> 0;
@@ -903,11 +793,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args){
 	/* Should return empty */
 	return print(1,to_string( empty / 5)+"\n") -> 0;
@@ -927,13 +812,8 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_exp(a);
-  printd(a,b);
-}
-
-[1,1] main([1,n] args) {
-  return printd(1, extend_exp(2.0)) -> 0;
+main([1,n] args) {
+  return printd(1, exp(2.0)) -> 0;
 }
 \end{lstlisting}
 
@@ -950,13 +830,8 @@ extern "stdlib.o" {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_fabs(a);
-  printd(a,b);
-}
-
-[1,1] main([1,n] args) {
-  return printd(1, extend_fabs(-45.0)) -> 0;
+main([1,n] args) {
+  return printd(1, fabs(-45.0)) -> 0;
 }
 \end{lstlisting}
 
@@ -973,14 +848,8 @@ extern "stdlib.o" {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_open(a,b);
-  extend_close(a);
-  print(a,b);
-}
-
-[1,1] main(args){
-  return extend_close(extend_open("testcases/assets/test_file.txt", "r")) -> print(1,"Made it this far\n") -> 0;
+main(args){
+  return close(open("testcases/assets/test_file.txt", "r")) -> print(1,"Made it this far\n") -> 0;
 }
 \end{lstlisting}
 
@@ -997,15 +866,8 @@ Made it this far
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_open(a,b);
-  extend_read(a,b);
-  extend_close(a);
-  print(a,b);
-}
-
-[1,1] main(args){
-  return print(1, extend_read(extend_open("testcases/assets/test_file.txt", "r"),5)) -> 0;
+main(args){
+  return print(1, read(open("testcases/assets/test_file.txt", "r"),5)) -> 0;
 }
 \end{lstlisting}
 
@@ -1017,21 +879,37 @@ extern "stdlib.o" {
 This \end{lstlisting}
 
 
+\medskip \noindent \texttt{test-file-slurp.xtnd}
+
+
+\begin{lstlisting}
+main(args){
+  return
+    print(1, read(open("testcases/assets/test_file.txt", "r"),0)) ->
+    0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-file-slurp.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+This is a test file!
+\end{lstlisting}
+
+
 \medskip \noindent \texttt{test-file-write.xtnd}
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_open(a,b);
-  extend_write(a,b);
-  extend_close(a);
-  print(a,b);
-}
-
-[1,1] main(args){
-  return extend_close(extend_write(extend_open("testcases/assets/test_file_write.out", "w"), "Hello"))
-          -> print(1,"Made it this far\n")
-          -> 0;
+main(args){
+  handle := open("testcases/assets/test_file_write.out", "w");
+  return
+    write(handle, "Hello") ->
+    close(handle) ->
+    print(1,"Made it this far\n") ->
+    0;
 }
 \end{lstlisting}
 
@@ -1048,13 +926,8 @@ Made it this far
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_floor(a);
-  printd(a,b);
-}
-
-[1,1] main([1,n] args) {
-  return printd(1, extend_floor(10.45)) -> 0;
+main([1,n] args) {
+  return printd(1, floor(10.45)) -> 0;
 }
 \end{lstlisting}
 
@@ -1071,15 +944,10 @@ extern "stdlib.o" {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args) {
   return print(1,to_string( foo("string"))+"\n") -> 0;
 }
-[1,1] foo([1,1] arg) {
+foo([1,1] arg) {
   return arg;
 }
 \end{lstlisting}
@@ -1097,11 +965,6 @@ string
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args) {
   return print(1,to_string( foo("string"))+"\n") -> 0;
 }
@@ -1123,11 +986,6 @@ string
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-	print(a,b);
-		printv(a,b);
-}
-
 bar() {
 	foo := 5;
 	return 2;
@@ -1135,7 +993,7 @@ bar() {
 
 global foo := printv(1,"Hello Globals!\n") -> 0;
 
-[1,1] main(args) {
+main(args) {
   return foo;
 }
 \end{lstlisting}
@@ -1153,11 +1011,6 @@ Hello Globals!
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-	print(a,b);
-		printv(a,b);
-}
-
 bar() {
 	foo := 5;
 	return 2;
@@ -1165,7 +1018,7 @@ bar() {
 
 global foo := printv(1,"Hello Globals!\n") -> 0;
 
-[1,1] main(args) {
+main(args) {
 	foo := printv(1,"Hello Locals!\n") -> 0;
   return foo;
 }
@@ -1203,11 +1056,6 @@ Hello
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( 6 > 5)+"\n") -> 0;
 }
@@ -1226,11 +1074,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty > 5)+"\n") -> 0;
 }
@@ -1249,11 +1092,6 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( 7 >= 7)+"\n") -> 0;
 }
@@ -1272,11 +1110,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty >= 7)+"\n") -> 0;
 }
@@ -1295,11 +1128,6 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( 6 < 7)+"\n") -> 0;
 }
@@ -1318,11 +1146,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty > 5)+"\n") -> 0;
 }
@@ -1341,11 +1164,6 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( 7 <= 5)+"\n") -> 0;
 }
@@ -1364,11 +1182,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty <= 8)+"\n") -> 0;
 }
@@ -1387,13 +1200,8 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_log(a);
-  printd(a,b);
-}
-
-[1,1] main([1,n] args) {
-  return printd(1, extend_log(10.0)) -> 0;
+main([1,n] args) {
+  return printd(1, log(10.0)) -> 0;
 }
 \end{lstlisting}
 
@@ -1410,13 +1218,8 @@ extern "stdlib.o" {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_log10(a);
-  printd(a,b);
-}
-
-[1,1] main([1,n] args) {
-  return printd(1, extend_log10(100.0)) -> 0;
+main([1,n] args) {
+  return printd(1, log10(100.0)) -> 0;
 }
 \end{lstlisting}
 
@@ -1433,11 +1236,6 @@ extern "stdlib.o" {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( 1 && 6)+"\n") -> 0;
 }
@@ -1456,11 +1254,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty && 1)+"\n") -> 0;
 }
@@ -1479,11 +1272,6 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( !5)+"\n") -> 0;
 }
@@ -1502,11 +1290,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( !empty)+"\n") -> 0;
 }
@@ -1525,11 +1308,6 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( 5 || 6)+"\n") -> 0;
 }
@@ -1548,11 +1326,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty || 4)+"\n") -> 0;
 }
@@ -1571,11 +1344,6 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args){
 	/* Should return 1 */
 	return print(1,to_string( 5 % 4)+"\n") -> 0;
@@ -1595,11 +1363,6 @@ main([1,n] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args){
 	/* Should return empty */
 	return print(1,to_string( empty % 5)+"\n") -> 0;
@@ -1636,11 +1399,6 @@ Hello
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args){
 	/* Should evaluate to 35 */
 	return print(1,to_string( 7 * 5)+"\n") -> 0;
@@ -1660,11 +1418,6 @@ main([1,n] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args){
 	/* Should evaluate to empty */
 	return print(1,to_string( empty * 5)+"\n") -> 0;
@@ -1680,11 +1433,93 @@ empty
 \end{lstlisting}
 
 
+\medskip \noindent \texttt{test-nan-and-infinity.xtnd}
+
+
+\begin{lstlisting}
+main(args) {
+  should_be_nan := sqrt(-1);
+  should_also_be_nan := 0 / 0;
+  should_be_plus_inf := 2 / 0;
+  should_be_minus_inf := -3 / 0;
+  should_be_normal := 4;
+  foo := "Hello";
+  bar := empty;
+  [3,3] baz := row() * column();
+
+  return
+    print_endline(typeof(should_be_nan)) -> // "Number"
+    print_endline(typeof(should_also_be_nan)) -> // "Number"
+    print_endline(typeof(should_be_plus_inf)) -> // "Number"
+    print_endline(typeof(should_be_minus_inf)) -> // "Number"
+    print_endline(typeof(should_be_normal)) -> // "Number"
+    print_endline(typeof(foo)) -> // "String"
+    print_endline(typeof(bar)) -> // "Empty"
+    print_endline(typeof(baz)) -> // "Range"
+    print_endline("") ->
+
+    print_endline(isNaN(should_be_nan)) -> // 1
+    print_endline(isNaN(should_also_be_nan)) -> // 1
+    print_endline(isNaN(should_be_plus_inf)) -> // 0
+    print_endline(isNaN(should_be_minus_inf)) -> // 0
+    print_endline(isNaN(should_be_normal)) -> // 0
+    print_endline(isNaN(foo)) -> // 0
+    print_endline(isNaN(bar)) -> // 0
+    print_endline(isNaN(baz)) -> // 0
+    print_endline("") ->
+
+    print_endline(isInfinite(should_be_nan)) -> // 0
+    print_endline(isInfinite(should_also_be_nan)) -> // 0
+    print_endline(isInfinite(should_be_plus_inf)) -> // 1
+    print_endline(isInfinite(should_be_minus_inf)) -> // -1
+    print_endline(isInfinite(should_be_normal)) -> // 0
+    print_endline(isInfinite(foo)) -> // 0
+    print_endline(isInfinite(bar)) -> // 0
+    print_endline(isInfinite(baz)) -> // 0
+
+    0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-nan-and-infinity.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+Number
+Number
+Number
+Number
+Number
+String
+Empty
+Range
+
+1
+1
+0
+0
+0
+empty
+empty
+empty
+
+0
+0
+1
+-1
+0
+empty
+empty
+empty
+\end{lstlisting}
+
+
 \medskip \noindent \texttt{test-parse-error.xtnd}
 
 
 \begin{lstlisting}
-[1,1] main(args){
+main(args){
   foo := 5$5;
   return foo;
 }
@@ -1704,7 +1539,7 @@ Line 2 at character 11
 
 
 \begin{lstlisting}
-[1,1] main(args){
+main(args){
 /* This is a comment spanning multiple lines.
 
 
@@ -1745,7 +1580,7 @@ Line 23 at character 10
 
 
 \begin{lstlisting}
-[1,1] main(args){
+main(args){
   foo := 5/5;
   /* Test comment */ foo := 5$5;
   return foo;
@@ -1789,7 +1624,7 @@ Line 5 at character 2
 
 
 \begin{lstlisting}
-[1,1] main(args){
+main(args){
   foo := 5/5;
   bar := "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"$5;
   return foo;
@@ -1810,7 +1645,7 @@ Line 3 at character 52
 
 
 \begin{lstlisting}
-[1,1] main(args){
+main(args){
   foo := "Hello";$$$;
   return foo;
 }
@@ -1830,11 +1665,6 @@ Line 2 at character 18
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args){
 	/* Should return 216 */
 	return print(1,to_string( 6**3)+"\n") -> 0;
@@ -1854,11 +1684,6 @@ main([1,n] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args){
 	/* Should return empty */
 	return print(1,to_string( empty**5)+"\n") -> 0;
@@ -1878,11 +1703,6 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args) {
   foo := empty;
   return print(1,to_string( foo)+"\n") -> 0;
@@ -1902,11 +1722,6 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args) {
   foo := 1;
   return print(1,to_string( foo)+"\n") -> 0;
@@ -1926,11 +1741,6 @@ main([1,n] args) {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args) {
   foo := "string";
   return print(1,to_string( foo)+"\n") -> 0;
@@ -1946,15 +1756,75 @@ string
 \end{lstlisting}
 
 
+\medskip \noindent \texttt{test-range-equality.xtnd}
+
+
+\begin{lstlisting}
+main(args) {
+  my1 := {"Hello, world", "Goodbye, world"};
+  my2 := {"Hello, world", "Goodbye, world"};
+  my3 := {3,4,5,{"Hello, world", "Goodbye, world"},6,7,8};
+  my4 := {3,empty,5,{"Hello, world", "Goodbye, world"},6,7,8};
+  my5 := {3,4,5,{"Hello, world"; "Goodbye, world"},6,7,8};
+  [2,2] foo := my1;
+  [2,1] bar := my1;
+  [3,3] ident := row() == column();
+  ident_lit := {1,0,0;0,1,0;0,0,1};
+  [3,3] all_ones := 1;
+  baz := my2;
+  return
+    // True cases
+    print_endline(my1 == my2) ->
+    print_endline(baz == my1) ->
+    print_endline(foo[0,0] == my2) ->
+    print_endline(foo[0,1] == my2) ->
+    print_endline(foo[0,0] == foo[1,1]) ->
+    print_endline(foo[:,0] == bar) ->
+    print_endline(my3[3] == my1) ->
+    print_endline(ident == ident_lit) ->
+    print_endline("") ->
+
+    // False cases
+    print_endline(my3 == my5) ->
+    print_endline(my3 == my4) ->
+    print_endline(foo == bar) ->
+    print_endline(foo == foo[0,0]) ->
+    print_endline(ident == all_ones) ->
+    print_endline(ident == 1) ->
+    print_endline(all_ones == 1) ->
+    0
+    ;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-range-equality.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+1
+1
+1
+1
+1
+1
+1
+1
+
+0
+0
+0
+0
+0
+0
+0
+\end{lstlisting}
+
+
 \medskip \noindent \texttt{test-ref-between-globals.xtnd}
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 global [2,2] foo;
 global [2,2] bar;
 main([1,n] args) {
@@ -1977,10 +1847,6 @@ main([1,n] args) {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-}
-
 main([1,1] args){
 	return 0 && print(1,"FAIL\n") -> print(1,"PASS\n") -> 0;
 }
@@ -1999,10 +1865,6 @@ PASS
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-}
-
 main([1,1] args){
 	return 1 && print(1,"PASS1\n") -> print(1,"PASS2\n") -> 0;
 }
@@ -2022,10 +1884,6 @@ PASS2
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-}
-
 main([1,1] args){
 	return 0 || print(1,"PASS1\n") -> print(1,"PASS2\n") -> 0;
 }
@@ -2045,10 +1903,6 @@ PASS2
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-}
-
 main([1,1] args){
 	return 1 || print(1,"FAIL\n") -> print(1,"PASS\n") -> 0;
 }
@@ -2063,17 +1917,35 @@ PASS
 \end{lstlisting}
 
 
+\medskip \noindent \texttt{test-signature-vars.xtnd}
+
+
+\begin{lstlisting}
+foo([m,n] arg) {
+	return "I was called with an argument with " + to_string(m) + " rows and " + to_string(n) + " columns.";
+}
+
+main([1,1] args) {
+	[42,17] x;
+	return print(1,foo(x)+"\n") -> 0;
+}
+\end{lstlisting}
+
+
+\medskip \noindent \texttt{test-signature-vars.xtnd - Expected Output}
+
+
+\begin{lstlisting}
+I was called with an argument with 42 rows and 17 columns.
+\end{lstlisting}
+
+
 \medskip \noindent \texttt{test-sin.xtnd}
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_sin(a);
-  printd(a,b);
-}
-
-[1,1] main([1,n] args) {
-  return printd(1, extend_sin(45.0)) -> 0;
+main([1,n] args) {
+  return printd(1, sin(45.0)) -> 0;
 }
 \end{lstlisting}
 
@@ -2090,16 +1962,11 @@ extern "stdlib.o" {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_sin(a);
-  printd(a,b);
-}
-
 internal_sin(x,y,z) {
-  return extend_sin(z);
+  return sin(z);
 }
 
-[1,1] main([1,n] args) {
+main([1,n] args) {
   return printd(1, internal_sin(1,2,45.0)) -> 0;
 }
 \end{lstlisting}
@@ -2117,18 +1984,13 @@ internal_sin(x,y,z) {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_sin(a);
-  printd(a,b);
-}
-
 global theta := 45.0;
 
 internal_sin(x,y,z) {
-  return extend_sin(z);
+  return sin(z);
 }
 
-[1,1] main([1,n] args) {
+main([1,n] args) {
   return printd(1, internal_sin(1,2,theta)) -> 0;
 }
 \end{lstlisting}
@@ -2146,11 +2008,6 @@ internal_sin(x,y,z) {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 import "../../samples/gcd_func.xtnd";
 
 main([1,n] args) {
@@ -2171,13 +2028,8 @@ main([1,n] args) {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_sinh(a);
-  printd(a,b);
-}
-
-[1,1] main([1,n] args) {
-  return printd(1, extend_sinh(45.0)) -> 0;
+main([1,n] args) {
+  return printd(1, sinh(45.0)) -> 0;
 }
 \end{lstlisting}
 
@@ -2194,13 +2046,8 @@ extern "stdlib.o" {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_sqrt(a);
-  printd(a,b);
-}
-
-[1,1] main([1,n] args) {
-  return printd(1, extend_sqrt(9.0)) -> 0;
+main([1,n] args) {
+  return printd(1, sqrt(9.0)) -> 0;
 }
 \end{lstlisting}
 
@@ -2217,11 +2064,7 @@ extern "stdlib.o" {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-		printv(a,b);
-}
-
-[1,1] main(args) {
+main(args) {
   foo :=
 		printv(1,"Hello " + "World\n") ->
 		printv(1,"Hello " + "World" + "\n") ->
@@ -2246,11 +2089,6 @@ Hello World
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( 7 - 5)+"\n") -> 0;
 }
@@ -2269,11 +2107,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty - 2)+"\n") -> 0;
 }
@@ -2292,11 +2125,6 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	x := switch(1) {
 		case 1: 100;
@@ -2320,11 +2148,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  printd(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	x := switch {
 		case 0: 100;
@@ -2348,11 +2171,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  printd(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	x := switch {
 		case 0: 100;
@@ -2375,11 +2193,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	x := switch(2) {
 		case 1: 100;
@@ -2403,11 +2216,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	x := switch(3) {
 		case 1: 100;
@@ -2431,11 +2239,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	x := switch(2) {
 		case 1, 2: 100;
@@ -2458,11 +2261,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	x := switch(3) {
 		case 1, 2: 100;
@@ -2485,11 +2283,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	x := switch(3) {
 		case 1, 2: 100;
@@ -2513,11 +2306,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	x := switch(4) {
 		case 1, 2: 100;
@@ -2540,11 +2328,6 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	x := switch() {
 		case 1 > 2: 100;
@@ -2567,11 +2350,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  printd(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	x := switch {
 		case "true": 100;
@@ -2594,13 +2372,8 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_tan(a);
-  printd(a,b);
-}
-
-[1,1] main([1,n] args) {
-  return printd(1, extend_tan(45.0)) -> 0;
+main([1,n] args) {
+  return printd(1, tan(45.0)) -> 0;
 }
 \end{lstlisting}
 
@@ -2617,13 +2390,8 @@ extern "stdlib.o" {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  extend_tanh(a);
-  printd(a,b);
-}
-
-[1,1] main([1,n] args) {
-  return printd(1, extend_tanh(45.0)) -> 0;
+main([1,n] args) {
+  return printd(1, tanh(45.0)) -> 0;
 }
 \end{lstlisting}
 
@@ -2640,11 +2408,6 @@ extern "stdlib.o" {
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string(5 ? 2 : 3) + "\n") -> 0;
 }
@@ -2663,11 +2426,6 @@ main([1,1] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,1] args){
 	return print(1,to_string( empty ? 5 : 6)+"\n") -> 0;
 }
@@ -2686,11 +2444,6 @@ empty
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args){
 	/* Should return -33 */
 	return print(1,to_string( -33)+"\n") -> 0;
@@ -2710,11 +2463,6 @@ main([1,n] args){
 
 
 \begin{lstlisting}
-extern "stdlib.o" {
-  print(a,b);
-  to_string(a);
-}
-
 main([1,n] args){
 	return print(1,to_string( -empty)+"\n") -> 0;
 }

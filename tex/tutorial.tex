@@ -31,6 +31,47 @@ make
 
 	\medskip \noindent
 	This should produce an \texttt{out} file. Running \texttt{./out} should successfully execute the program.
+\section{Illustrating the Benefits of Extend}
+Spreadsheet applications require the use of manual input in order to apply the same calculation to a different set of data. Extend aims to tackle this problem by offering portability. Below is an example of a spreadsheet user calculating the unit vector of a column vector:
+
+\begin{center}
+\includegraphics[width=7cm]{img/unitvector.png}
+\end{center}
+
+\medskip \noindent The Excel user must manually input the data, and additionally make space for the intermediate steps of the calculation. As the data becomes more diverse and the problem becomes more complicated, more work is required. Below is the equivalent function in Extend, written to work on any column vector that is passed in:
+
+\begin{lstlisting}
+	normalize_column_vector([m,1] arg) {
+	  [m,1] squared_lengths := #arg * #arg, normalized := #arg / vector_norm;
+	  vector_norm := sqrt(sum(squared_lengths));
+	  return normalized;
+	}
+\end{lstlisting}
+
+\medskip \noindent Another particularly interesting example is concatenating a row of strings of variable length with a common delimiter. This in an entirely manual operation for the spreadsheet user; a step-by-step attempt is shown below.
+
+\begin{center}
+\includegraphics[width=9cm,height=3cm]{img/concatenation.png}
+\end{center}
+
+\medskip \noindent Performing a delimiter 'join' like the above can be performed in a simple program in Extend without knowing the size of the row.
+
+\begin{lstlisting}
+main(args){
+	bar := {"Hello", "Goodbye", "Hello Again"};
+	str := ", ";
+	return foo(bar, str);\\ prints "Hello, Goodbye, Hello Again"
+}
+
+foo([1,n] colrange, str){
+	[1,n] baz;
+	baz[0,0] = #colrange;
+	baz[0,1:] = baz[0,[-1]] + str + colrange[0,[0]];
+	return print_endline(baz[0,-1]);
+}
+\end{lstlisting}
+
+\medskip \noindent As evidenced above by simple examples, Extend offers flexibility that is significantly harder to achieve with conventional spreadsheet applications. As the nature of the data grows in complexity and variety, Extend's value increases.
 
 \section{Writing Extend Code - The Basics}
 Extend code can be written in a file that contains the conventional \texttt{.xtnd} extension. It consists of optional import statements and global variables, and an optional set of functions. Runnable Extend programs must contain a \texttt{main} function, and other functions can be written into the program as well.

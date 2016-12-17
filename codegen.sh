@@ -1,7 +1,7 @@
 #!/bin/bash
 
 OCAML_CODE_LOC="./Extend/src/main"
-OCAML_FILES="scanner.mll parser.mly ast.ml transform.ml codegen.ml linker.ml main.ml"
+OCAML_FILES="scanner.mll parser.mly ast.ml transform.ml semant.ml codeGenTypes.ml codegen.ml linker.ml main.ml"
 
 C_CODE_LOC="./Extend/src/stdlib"
 C_FILES="lib.c runtime.c"

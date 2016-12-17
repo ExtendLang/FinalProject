@@ -1,5 +1,5 @@
 \chapter{Introduction}
-Extend is a declarative programming language meant to support spreadsheet-like functionality. It contains features such as complex calculations on large inputs of data, side-effect free and immutable values, and automatic formula adjustments relative to rows and columns. Extend is compiled to the LLVM (Low Level Virtual Machine) intermediate representation, which in turn is reduced to machine assembly. Extend takes inspiration from software such as Microsoft Excel, which allows users to link several formulae on dependent groups of data together, but takes this technology a step further by allowing users to encapsulate such calculations as functions.
+Extend is a declarative programming language meant to support spreadsheet-like functionality. It contains features such as side-effect free values, immutability, and automatic formula adjustments relative to rows and columns. Extend is compiled to the LLVM (Low Level Virtual Machine) intermediate representation, which in turn is reduced to machine assembly. Extend takes inspiration from software such as Microsoft Excel, which allows users to link several formulae on dependent groups of data together, but takes this technology a step further by allowing users to encapsulate such calculations as functions.
 
 \section{Inspiration \& Use Cases}
 
@@ -7,15 +7,15 @@ Extend is a declarative programming language meant to support spreadsheet-like f
 	The design goal of our language was to be "a spreadsheet you can compile". Extend was conceptualized to address the limitations that prevented the spreadsheet environment from evolving into a compiled, flexible programming language. To create this, there were three main things that needed to be changed about the way interactive spreadsheets work:
 		\begin{itemize}
 			\item The language needs reusable functions as opposed to having to copy \& paste a block of cells.
-			\item Cell ranges need to be created with dynamic runtime-determined decisions.
-			\item In order to support more complex data structures, we must allow complex content within cells as opposed to single numbers or strings.
+			\item Cell ranges need to be created with dynamic runtime-determined dimensions.
+			\item Cells need to be able to contain composite values in addition to single numbers or strings.
 		\end{itemize}
-	With these changes in mind, we attempted to keep the semantics as similar as possible to traditional spreadsheet programs; this meant implementing a dynamically typed language that is fairly forgiving to the user.
+	With these changes in mind, we attempted to keep the semantics as similar as possible to traditional spreadsheet programs; this meant implementing a dynamically typed language that is tolerant of potential errors in its input data. Extend degrades gracefully in the presence of potential data errors.
 	\newline \newline
-	Microsoft Excel and Google Sheets find issues at scale when users need to process more and more complicated calculations on several different sets of data, sometimes at scheduled intervals. Extend was conceptualized as a standalone application that removes the manual element of entering new inputs. It brings the best of spreadsheets and computation into one product.
+	Spreadsheet applications cannot be 'run' on different sets of input data. Extend was conceptualized as a standalone application that removes the manual element of entering new inputs. In building this language, our mission was to bring the best of spreadsheets and computation into one product.
 
 	\subsection{Complex Calculations Across Many Inputs}
-	Extend is spiritually closer in behavior to Microsoft Excel than other conventional programming languages. Extend can nest basic operations in cells of a range, Extend's proprietary data type, and apply mathematical operations on both individual cells of a range and the entire range itself. A dependency graph is evaluated at runtime to optimize and execute these calculations.
+	Extend is spiritually closer in behavior to Microsoft Excel than other conventional programming languages. In one line of code, a single formula can be assigned to to all of the cells in a \texttt{range}, one of Extend's data types.
 
 	\subsection{Flexibility}
-	Extend, as a declarative language, allows you to keep dimensional values potentially variable until runtime, and handles some errors with the "empty" keyword, which persists throughout calculation instead of crashing the program. It supports a range of standard library functions that are additionally supported in conventional spreadsheet technology as well.
+	Extend allows the dimensions of ranges to be determined dynamically at runtime, and handles most type errors by degrading gracefully instead of crashing the program. The standard library that Extend delivers includes a subset of the functions that are built into conventional spreadsheet applications.

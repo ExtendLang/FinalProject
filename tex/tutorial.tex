@@ -3,19 +3,12 @@
 This will cover the configuration of the user's environment and the usage of Extend's features.
 
 \section{Setup}
-The Extend compiler requires that the OCaml Language and LLVM be installed on the host machine. Development was done in a virtual machine running the 64-bit Ubuntu 16.04 operating system.
+The Extend compiler requires that the OCaml Language and LLVM be installed on the host machine. Development was done in a virtual machine running the 64-bit Ubuntu operating system. In order to quickly get Extend up and running, please use \underline{\href{https://courseworks2.columbia.edu/courses/10787/files/673708/download}{this virtual machine}}, which has been provided as part of the course.
+
+	\medskip \noindent After booting up the virtual machine, clone the Extend git repository:
 
 	\begin{lstlisting}
-		sudo apt-get install -y ocaml m4 llvm opam
-		opam init
-		opam install llvm.3.8 ocamlfind oasis ounit
-		eval `opam config env`
-	\end{lstlisting}
-
-	\medskip \noindent After setting up the environment, clone the Extend git repository:
-
-	\begin{lstlisting}
-git clone https://github.com/ExtendLang/Extend.git
+		git clone https://github.com/ExtendLang/Extend.git
 	\end{lstlisting}
 
 \section{Compiling and Running Extend Code}
@@ -40,9 +33,10 @@ make
 	This should produce an \texttt{out} file. Running \texttt{./out} should successfully execute the program.
 
 \section{Writing Extend Code - The Basics}
-Extend code can be written in a file that contains the conventional \texttt{.xtnd} extension. It consists of optional import statements and global variables, and one or more series of functions. Runnable Extend programs must contain a \texttt{main} function, and other functions can be written into the program as well.
-\newline \newline
-Below is a short tour of the features of Extend. More detail can be found in the next chapter - the Language Reference Manual. Please note Extend uses the \texttt{range} data type to represent multiple cells of data, composed of primitive data types or another \texttt{range}.
+Extend code can be written in a file that contains the conventional \texttt{.xtnd} extension. It consists of optional import statements and global variables, and an optional set of functions. Runnable Extend programs must contain a \texttt{main} function, and other functions can be written into the program as well.
+
+\medskip \noindent
+Below is a short tour of the features of Extend. More detail can be found in the next chapter - the Language Reference Manual.
 
 	\subsection{Functions}
 	Functions are commonplace in Extend. They are declared with the syntax \texttt{function\_name([optional\_dimensions] function\_arguments)\{...\}}. Below is the syntax of the \texttt{main} function, which is needed to run Extend code, within a simple Extend program.
@@ -69,6 +63,30 @@ Below is a short tour of the features of Extend. More detail can be found in the
 				return 0; \\ 1 by 1 ranges should be primitive data types. If arg is not, a runtime error will be thrown
 			}
 		\end{lstlisting}
+
+	\subsection{Adjusting to Extend's Declarative Behavior}
+	An important aspect of Extend is that the concept of a simple statement, barring the \texttt{return} statement, does not exist. In an Extend function, there are only declarations, formula assignments, and a return expression. As a declarative language, Extend examines the \texttt{return} statement, and simply evaluates the lines that will help get that return value. All other lines are ignored.
+
+	\medskip \noindent The below Extend source file will not compile.
+
+	\begin{lstlisting}
+		main(args){
+			foo := "Hello World!";
+			print_endline(foo);\\ Cannot have this line. Must equal some formula.
+			return foo;
+		}
+	\end{lstlisting}
+
+	\medskip \noindent The below file compiles and prints successfully.
+
+	\begin{lstlisting}
+		main(args){
+			foo := "Hello World!";
+			return print_endline(foo); \\ print_endline is required in the return statement, and therefore runs
+		}
+	\end{lstlisting}
+
+	\medskip \noindent As illustrated, Extend only evaluates what is needed to produce the value required by \texttt{return}. Any non-essential declarations or formula assignments will be ignored by the program. If the user attempts to write statements like \texttt{print\_endline("Hello")} by itself, the program will not compile.
 
 	\subsection{Primitive Data Types}
 	Extend has three primitive data types: Numbers, Strings, and \texttt{empty}. An example of each is shown below.
@@ -137,8 +155,10 @@ Below is a short tour of the features of Extend. More detail can be found in the
 		\end{lstlisting}
 
 	\subsection{Ranges}
-	Ranges are an incredibly important aspect of Extend. A range is a composite data type composed of rows and columns of cells.
-	Each cell contains a formula that can evaluate to another range or one of the aforementioned three data types - number, string, or \texttt{empty}. Note that \textbf{1 by 1} ranges are automatically dereferenced to their contents in Extend.
+	In Extend, \texttt{variables} are composed of cells. Under the hood, each cell points to a structure that may contain either primitive values or another \texttt{range}. This range can point to anonymous variables that are dereferenced in the aforementioned fashion as many times as needed to reveal the primitive value of the cell.
+	\newline \newline
+	Ranges are an incredibly important aspect of Extend. A range is composed of rows and columns of values.
+	Each value can contain a formula that can evaluate to another range or one of the aforementioned three data types - number, string, or \texttt{empty}. Note that \textbf{1 by 1} ranges are automatically dereferenced to their contents in Extend.
 
 	\begin{lstlisting}
 		[1,2] foo; \\ Declares range of dimensions 1 by 2
@@ -199,21 +219,6 @@ Below is a short tour of the features of Extend. More detail can be found in the
 
 	\begin{lstlisting}
 		import "../programs/helloworld.xtnd"
-	\end{lstlisting}
-
-	\subsection{Lazy Evaluation}
-	In Extend, certain values are not invoked until they are explicitly needed by the program, which creates series of dependent essential values. For example:
-
-	\begin{lstlisting}
-		main(args){
-			write(STDOUT, "something");// this won't print
-			return 0;
-		}
-	\end{lstlisting}
-	\begin{lstlisting}
-		main(args){
-			return write(STDOUT, "something") -> 0;// this will print
-		}
 	\end{lstlisting}
 
 \section{Standard Library Functions}

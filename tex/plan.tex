@@ -43,6 +43,14 @@ Further we were developing our runtime in C. We applied the following style rule
   \item Make sure to exit gracefully.
   \end{itemize}
 
+\section{Language Evolution}
+Looking back at our original proposal, the language we delivered ended up surprisingly close. The biggest change was to allow strings and ranges as value types, which made the language immeasurably better. Initially, we wanted to only have Numbers; but allowing cells to contain ranges (composite values) and not just primitive values makes it a much more useful language. Otherwise, the syntax and semantics are very close to what was in our original proposal.
+
+Our initial plan was to precalculate the dependencies among cells as best as possible at compile time and generate code accordingly. However, it quickly became clear that the language was better with runtime-determined cell dependencies and we therefore had to give up on a precomputed graph. We didn't have time in this class to implement an explicit stack as opposed to using recursion, but this could be overcome if it had to be.
+
+Another fairly minor change was to eliminate the dimension signature for functions. As we played around with the language in the interpreter, it became clear that we weren't using them and it wasn't obvious why we would; they were dropped as a result.
+
+
 \section{Team Member Responsibilities}
 
 \begin{tabular}{ | l | l | l |}\hline

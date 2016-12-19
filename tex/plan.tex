@@ -16,13 +16,16 @@ Our team also met weekly on Fridays to further discuss the progression of Extend
   New features were introduced to the master branch through pull requests, and the team used this as a platform to peer review code to maximize code quality before such features entered production.
 
   \medskip \noindent
-  An important aspect of development for us was continuous integration. We used Travis CI to trigger project builds on each pull request, which kept us informed regarding unexpected hiccups that sometimes arose during development. Travis CI ensured that new features were implemented with protecting the code base in mind, and provided quick visibility as to whether a new feature would break the existing build. Any changeset to the master branch must:
+  An important aspect of development for us was continuous integration. Each pull request we made triggered a Travis build, which kept us informed regarding unexpected hiccups that sometimes arose during development. Travis CI ensured that new features were implemented with protecting the code base in mind, and provided quick visibility as to whether a new feature would break the existing build. Any changeset to the master branch must:
 
   \begin{enumerate}
     \item Pass Travis CI.
     \item Be approved by another member of the team.
     \item Be up to date with the master branch.
   \end{enumerate}
+
+  \subsection{The Interpreter}
+  In our efforts to maximize our effectiveness when building the compiler, we additionally built a working interpreter to test the language semantics and run example Extend programs. This helped us determine language decisions at an earlier stage in the process, and helped us benchmark the success of our compiler by comparing the number of testcases passed by both.
 
 \section{Team Member Responsibilities}
 

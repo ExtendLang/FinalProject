@@ -90,7 +90,7 @@ Below is a short tour of the features of Extend. More detail can be found in the
 	% Perhaps a more informative program - but not too difficult.
 
 	\medskip \noindent
- 	The return type of a function is a \textbf{range} of flexible size. \textbf{Ranges} will be discussed in a later section of this chapter. A function is composed of a series of statements, concluding with the return statement.
+ 	The return type of a function is a value that can be of any type or dimensions. \textbf{Ranges} will be discussed in a later section of this chapter. A function is composed of variable declarations and formula assignments and concludes with the \textbf{return} statement.
 	Note that the \textbf{return} statement is always the last statement in the function.
 
 		\subsubsection{Function Parameters}
@@ -108,16 +108,16 @@ Below is a short tour of the features of Extend. More detail can be found in the
 	\subsection{Adjusting to Extend's Declarative Nature}
 	The biggest difference between Extend and most traditional programming languages is that the concept of an imperative statement does not exist. An Extend function consists solely of variable declarations, formula assignments, and a return expression. When a function is called, its \texttt{return} expression is evaluated, along with the values of any variables that the return expression depends on. In a traditional imperative language, the order of operations is determined explicitly by the developer; in Extend, the order is determined implicitly by the desired result.
 
-	\medskip \noindent The file below compiles and prints successfully.
+	\medskip \noindent The following file compiles and prints successfully.
 
 	\begin{lstlisting}
 		main(args){
-			foo := "Hello World!";     // Combined variable declaration and formula assignment
-			return print_endline(foo); // The return expression is a call to print_endline().
+			foo := "Hello World!";     // Combined var declaration and formula assignment
+			return print_endline(foo); // Return expression is a call to print_endline().
 		}
 	\end{lstlisting}
 
-	\medskip \noindent However, this is not a legal Extend program:
+	\medskip \noindent However, the file below is not a legal Extend program:
 
 	\begin{lstlisting}
 		main(args){
@@ -133,11 +133,10 @@ Below is a short tour of the features of Extend. More detail can be found in the
 	Extend has three primitive data types: Numbers, Strings, and \texttt{empty}; and one composite type, Range. An example of each is shown below.
 
 	\begin{lstlisting}
-		myNumber := 5;
-		myString := "Hello World";
-		myEmpty  := empty;
-		myRange  := {3, 4, "five";
-							   "a", "b", "c"}
+		myNumber    := 5;
+		myString    := "Hello World";
+		myEmpty     := empty;
+		my2x3Range  := {3, 4, "five"; "a", "b", "c"};
 	\end{lstlisting}
 
 	\subsection{Variables}
@@ -148,8 +147,8 @@ Below is a short tour of the features of Extend. More detail can be found in the
 		[1,3] bar := 4; // Declares a variable with 1 row and 3 columns and
 		                // assigns the literal value 4 as the formula for each cell
 		[1,2] baz;                 // Declares a 1x2 variable baz
-		baz[0,0] = "first cell";   // Assigns the literal "first cell" as the formula for the
-		baz[0,1] = 1 + 1;          // first cell and the expression 1+1 for the second cell
+		baz[0,0] = "first";   		 // Assigns literal "first" as the formula for the
+		baz[0,1] = 1 + 1;          // 1st cell and the expression 1+1 for the 2nd cell
 		life := 6, universe := 7;  // Declares 1x1 variables life and universe
 		answer := life * universe; // Declares a 1x1 variable the_answer and assigns
 															 // the formula life * universe to its sole cell
@@ -159,17 +158,17 @@ Below is a short tour of the features of Extend. More detail can be found in the
 	\end{lstlisting}
 
 	\medskip \noindent
-	\textbf{Note} that we declare a variable and assign a formula to all of its cells in a single line with \texttt{:=}. If the variable has already been declared, a formula must be assigned using \texttt{=} instead of \texttt{:=}. As illustrated in this example, a single formula can be assigned to multiple cells of a variable with the slice syntax. The contents of the slice, as well as the dimensions of the variable, can be any expression that evaluates to a number, not just a literal number. For example, this code snippet assigns the dimensions based on the \texttt{how_big()} function and the formulas "left", "right", and "last" based on the \texttt{breakpoint()} function:
+	\textbf{Note} that we declare a variable and assign a formula to all of its cells in a single line with \texttt{:=}. If the variable has already been declared, a formula must be assigned using \texttt{=} instead of \texttt{:=}. As illustrated in this example, a single formula can be assigned to multiple cells of a variable with the slice syntax. The converse is not true: multiple formulas applying to a single cell will cause a runtime error. The contents of the slice, as well as the dimensions of the variable, can be any expression that evaluates to a number, not just a literal number. For example, this code snippet assigns the dimensions based on the \texttt{howBig()} function and the "left" and "right" formulas based on the \texttt{breakpoint()} function:
 
 	\begin{lstlisting}
 		breakpoint() {
 			return 7;
 		}
-		how_big() {
+		howBig() {
 			return 11;
 		}
 		foo_func() {
-			[1,how_big()] foo;
+			[1,howBig()] foo;
 			foo[0, :breakpoint()] = "left";
 			foo[0, breakpoint():-1] = "right";
 			foo[0, -1] = "last";
@@ -178,10 +177,10 @@ Below is a short tour of the features of Extend. More detail can be found in the
 	\end{lstlisting}
 
 	\medskip \noindent
-	This example also illustrates that the start (or end) index of a slice can be omitted if the developer wants the formula to apply from the beginning (or to the end) of the dimension, and that negative numbers can be used in a slice to count backwards from the end. As with all values in Extend, the dimensions of a variable, and the slices to which a formula applies, are immutable. The first time a variable is referred to (directly or indirectly) by the return expression, its dimensions and the formula assignment slices are computed; from that point on, they never change. In the example above, the how_big() function is invoked once, but the breakpoint() function is actually called twice: once for the "left" formula, and once for the "right" formula. 
+	This example also illustrates that the start (or end) index of a slice can be omitted if the developer wants the formula to apply from the beginning (or to the end) of the dimension, and that negative numbers can be used in a slice to count backwards from the end. As with all values in Extend, the dimensions of a variable, and the slices to which a formula applies, are immutable. The first time a variable is referred to (directly or indirectly) by the return expression, its dimensions and the formula assignment slices are computed; from that point on, they never change. In the example above, the howBig() function is invoked once, but the breakpoint() function is actually called twice: once for the "left" formula, and once for the "right" formula.
 
-		\subsubsection{The typeof operator}
-		Extend offers a \texttt{typeof(expr)} operator, which takes and expression and returns Number, String, Range, or Empty.
+	\subsubsection{Variables vs. Ranges}
+	A variable is not a data type; it is a collection of one or more cells with assigned formulas. A range is a value, which is internally implemented as a pointer to a subset of a variable's cells. A range is always composed of more than one value; a variable may have a single cell. The variable "backing" a range may not have been explicitly defined by the developer; for example, range literals are implemented using an anonymous variable.
 
 	\subsection{Operators}
 	Extend includes a comprehensive set of operators. Each category is listed in order of precedence. A more detailed explanation of each operator can be found in the Language Reference Manual.
@@ -211,13 +210,16 @@ Below is a short tour of the features of Extend. More detail can be found in the
 			"Hello " + "World\n"
 		\end{lstlisting}
 
+		\subsubsection{The size and typeof operators}
+		Extend offers a \texttt{typeof(expr)} operator, which takes an expression and returns Number, String, Range, or Empty (as a string). It also has the \texttt{size(expr)} operator, which returns the dimensions of its argument as a 1 x 2 range.
+
+
 	\subsection{Conditionals}
-	There are two types of conditionals: the if-then-else (ternary) conditional and a \texttt{switch} expression.
+	There are two types of conditional expressions: the if-then-else (ternary) conditional and a \texttt{switch} expression.
 
 		\subsubsection{If-Then-Else}
-		The two ways to write the ternary expression are as follows: \newline \newline
+		The two equivalent ways to write the ternary expression are as follows: \newline \newline
 		C/Java style: \texttt{condition ? expr\_if\_true : expr\_if\_false} \newline \newline
-		or: \newline \newline
 		Spreadsheet style: \texttt{if(conditional, expr\_if\_true, expr\_if\_false)}
 
 		\subsubsection{The Switch Expression}
@@ -234,11 +236,7 @@ Below is a short tour of the features of Extend. More detail can be found in the
 		\end{lstlisting}
 
 	\medskip \noindent
-	Ranges can also be declared as range literals. Rows are delineated by \texttt{;} and columns by \texttt{,}.
-
-	\begin{lstlisting}
-		foo := {"Hello", 1, 2; 3, 4, 5; 6, 7, 8} \\ Three rows, three columns.
-	\end{lstlisting}
+	In the example above, the \texttt{switch} expression used foo % 2 as an argument; however, this is not required, so a switch expression can be used (as in Go) as a replacement for a sequence of if-then-else conditionals.
 
 		\subsubsection{Range Slicing \& Selection}
 		Python-style array-slicing syntax can be applied to ranges, which will return a subrange based on either absolute or relative indexing. All indices are zero-based.
@@ -274,13 +272,19 @@ Below is a short tour of the features of Extend. More detail can be found in the
 		Extend has the \texttt{row()} and \texttt{column()} functions, which respectively return the row and column of the cell that is being calculated at that point in time.
 		There is also a \texttt{size(expr)} function, which returns a 1 by 2 range; the first cell contains the number of rows, and the second cell contains the number of columns.
 
-	\subsection{Precedence Expressions}
-	Precedence Expressions are used to force the evaluation of one expression before another. This is used when the order of operation is required for functions with side effects, such as the ones housed in Extend's standard library.
-	The \texttt{->} operator is used to denote precedence.
+	\subsection{Cell Evaluation, Side Effects, and Precedence Expressions}
+	As mentioned before, a cell's value is calculated at most once. It is evaluated when it is the only cell selected from a variable, or when a selection containing the cell is assigned as a range to another cell. In general, the language is designed so you don't have to think about this! However, in the case of formulas that call functions with side effects, it's important to understand the behavior. When necessary, a precedence expression (using the \texttt{->} operator) can be used to force the evaluation of one expression before another. A precedence expression calculates the first expression, discards the result, and evaluates to the second expression. The following example should help clarify how cell evaluation is performed:
 
 	\begin{lstlisting}
-		return print_func(4) -> 0; \\ print_func prints 4 to stdout before returning 0
+	main(args) {
+		foo := print_endline("Once") -> 2;
+		bar := foo + foo;
+		return print_endline(bar);
+	}
 	\end{lstlisting}
+
+	\medskip \noindent
+	This program prints "Once" and then prints 4. Before calling print\_endline, Extend calculates the value of bar, which in turn requires the value of foo (twice). The first time foo's value is calculated, print\_endline() is called with the argument "Once", and then foo evaluates to the constant 2. The second time that foo's value is required to calculate bar, it's already available: it is 2. Therefore, print\_endline("Once") is not called a second time.
 
 	\subsection{Import Statements}
 	In Extend, you can import other Extend files at the top of your program via relative directory path. The use case is below:

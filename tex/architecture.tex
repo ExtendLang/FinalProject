@@ -54,11 +54,113 @@ The transformer is the first step in converting the AST into LLVM code. It takes
   If successful LLVM IR is generated, the linker will adopt the role of building an executable object from the \texttt{.ll} file. This includes compiling it to an object file and linking the runtime environment along with other imported libraries.
 
   \section{Extend Runtime}
-  % Should talk about runtime.c here
-  Once a function is called, it recursively looks up what the return value depends on and calculates those values. For this process it is vital that the blueprints created by the Code Generator are correct. The algorithm uses those blueprints to instantiate relevant variables. Ultimately this allows very efficient calculation of the return value without understanding the underlying system.
+  Extend's cell values are lazily evaluated, which means they need to be implemented using function pointers. For each function that the Extend developer writes, the corresponding LLVM function that is generated is essentially identical: allocate a scope object for that function call, initialize that object with the appropriate set of variable definitions and the function arguments to that scope object, and then evaluate the variables corresponding to the size assertion and the return expression for that function. All of the "individualized" code lives in what we referred to as the formula-functions; for each distinct formula, the compiler generates a corresponding function that can be called when the corresponding cell's value is needed. Each formula-function shared the same signature: the arguments were a pointer to a scope and the row and column number of the cell being evaluated, and the return value was a pointer to a value struct (which holds the type and contents of the value.)
 
-  \medskip \noindent
-  Take three arguments - scope, row, and cell. This lets the function refer to other local variables in that function. The function \texttt{getVal} tells us whether we can actually run the function or not.
+  The two main functions of our C runtime, therefore, are instantiate\_variable(), which looks at the variable definition "blueprint" and calculates the actual dimensions of the variable for that particular function call, and calculates the actual range of cells to which each formula applies; and getVal(), which determines if a particular cell value has already been calculated or not, and calls the appropriate formula-function if not.
 
+  Before actually calling the main Extend entry point, our executable initializes a global array with the appropriate variable definitions for each function. When an Extend function is called, it simply copies the appropriate pointer into that array into its scope object.
+
+  Therefore, leaving aside all the variable multiplication resulting from transformations, and ignoring size assertions:
+  \begin{lstlisting}
+    foo() {
+      x := 1;
+      return x;
+    }
+  \end{lstlisting}
   \medskip \noindent
-  We generate code for every single variable in every single function.
+  would result in the LLVM equivalent of the following pseudocode (not written in any actual language) being generated:
+
+  \begin{lstlisting}
+    value_p foo() {
+      scope = new ExtendScope;
+
+      // Load the apropriate set of definitions for foo
+      scope->defns = global_definitions[42];
+
+      // Create an array of pointers to variable instances; one
+      // pointer per variable. Only one variable in this function
+      scope->insts = new var_instance* [1];
+
+      // getVar calls instantiate_var if that instance pointer is still NULL,
+      // or just returns the pointer if it's already been instantiated.
+      // The instantiated variable keeps a copy of the pointer to its scope
+      var_instance *return_variable = getVar(scope, 0);
+
+      // Get the value of cell [0,0] of return_variable
+      return getVal(return_variable, 0, 0);
+    }
+  \end{lstlisting}
+  \medskip \noindent
+
+  Since the newly initialized scope object would have held all NULL pointers for the instances, getVar() would have ended up calling instantiate\_variable, which would have determined that x had 1 row and 1 column; there was only a single formula for x, applying to all cells of x; and that that formula corresponded to the function pointer indicated in the variable definition.
+  When getVal was called, the value in the [0,0]th cell would similarly have been NULL. Therefore, getVal() would have determined the appropriate formula, and then called that formula-function with a pointer to the scope, and (0,0) for the row and column.
+
+  The actual C structures used are listed below:
+  \begin{lstlisting}
+
+  // Each formula-function has the following signature:
+  typedef value_p (*FormulaFP) (struct ExtendScope *scope, int row, int col);
+
+  // This structure tells the runtime how to actually calculate the range of
+  // cells to which each formula applies.
+  struct ExtendFormula {
+    /* These 10 variables correspond to formula_row_start through formula_col_end,
+     * where char singleRow/Col are true if formula_row_end is None */
+    char fromFirstRow;
+    int rowStart_varnum;
+    char toLastRow;
+    int rowEnd_varnum;
+    char fromFirstCol;
+    int colStart_varnum;
+    char toLastCol;
+    int colEnd_varnum;
+
+  	char isSingleRow;
+  	char isSingleCol;
+
+    FormulaFP formula;
+  };
+
+  // For a particular variable instance, this structure holds the results
+  // of the calculations for each formula.
+  struct ResolvedFormula {
+  	int rowStart, rowEnd, colStart, colEnd;
+  	FormulaFP formula;
+  };
+
+  struct var_defn {
+    /* This is like a class definition - for every declared variable in the
+     * Extend source, there should be one instance of these per compiled program.
+     * They should just live in the global program storage.
+     * It corresponds to Ast.variable */
+     int rows_varnum;
+     int cols_varnum;
+     int numFormulas;
+     struct ExtendFormula *formulas;
+  	 char isOneByOne;
+  	 char *name;
+  };
+
+  struct var_instance {
+    /* This is an actual instance of a variable - we get one of these
+     * per variable per time a function is called (assuming the contents
+     * of the variable get examined.  */
+  	int rows, cols;
+  	int numFormulas;
+  	struct ResolvedFormula *formulas;
+    struct ExtendScope *closure;
+    value_p *values;
+  	char *status;
+  	char *name;
+  };
+
+  // One scope object gets created per Extend function call
+  struct ExtendScope {
+    struct var_defn *defns;
+    struct var_instance **vars;
+  	int numVars;
+  	int refcount;
+  	value_p *functionParams;
+  };
+  \end{lstlisting}
+  

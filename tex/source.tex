@@ -1,0 +1,10 @@
+\chapter{Example Source Programs}
+Below are two example programs we've implemented in Extend to illustrate some of our language's features and use cases.
+
+\section{maybeCircular}
+  This program illustrates how Extend lazily evaluates. Since we shortcircuit the ternary conditional below, based on what the user inputs, this program will either complete or throw a runtime error.
+  \lstinputlisting{./samples/maybe_circular.xtnd}
+
+\section{True Shooting Percentage}
+  This program parses calculates the true shooting efficiency NBA players. It reads in a string from a file, parses it into a variable, and prints and calculates the true shooting percentage for each player based on values in the vector. It additionally prints the player with the highest percentage, and writes the results to a GIF bar chart.
+  \lstinputlisting{./tsp.xtnd}

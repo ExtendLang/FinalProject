@@ -19,3 +19,12 @@ Extend is a declarative programming language meant to support spreadsheet-like f
 
 	\subsection{Flexibility}
 	Extend allows the dimensions of ranges to be determined dynamically at runtime, and handles most type errors by degrading gracefully instead of crashing the program. The standard library that Extend delivers includes a subset of the functions that are built into conventional spreadsheet applications. As many of these as possible were implemented in Extend itself.
+
+\section{Target Audience}
+Our target users are people who are proficient using spreadsheets and who are bumping up against the limits of what can be done with them, but who have only limited exposure to traditional imperative programming; perhaps a brief exposure to a high-level language such as Java, Python, or Javascript. This target audience dictated several of the design decisions we made about the language behavior:
+\begin{itemize}
+	\item A single Number type instead of separate types for integers and floating-point numbers
+	\item Expressions involving incompatible types on the right-hand-side evaluate to \texttt{empty} instead of causing a runtime error
+	\item Applicative instead of normal order for function calls
+	\item Our selection operator automatically dereferences single-cell selections. We wanted sum(x[0:10,0:10]) to return the sum of a range, but x[0,0] + x[1,1] to return the sum of two numbers.
+\end{itemize}

@@ -29,13 +29,15 @@ Over the semester, we implemented our compiler from front end to back end, incor
 
   \begin{enumerate}
     \item Scanner (Early October)
-    \item Parser (Mid October)
-    \item Achieved Enlightenment \& Finalized Language Semantics (Late October)
-    \item AST (Early November)
-    \item Transformer and Semantic Analysis (Mid November)
-    \item Code Generation (Late November)
-    \item Standard Library and Regression Testing (Mid December)
-    \item Gave Glorious Presentation to Professor Edwards (Mid December)
+    \item Parser and JSON output (Mid October)
+    \item Finalize Language Semantics (Late October)
+    \item Implement interpreter (Mostly feature complete by early November)
+    \item Most transformations done, compile Hello World (Mid November)
+    \item Finalize test suite (End November)
+    \item Compile function calls, finish transformations (Early December)
+    \item Compile references to variables (Early December)
+    \item Feature complete compiler (December 15)
+    \item Presentation to Professor Edwards (December 19)
   \end{enumerate}
 
 
@@ -59,15 +61,15 @@ Further we were developing our runtime in C. We applied the following style rule
   \end{itemize}
 
 \section{Language Evolution}
-Looking back at our original proposal, the language we delivered ended up surprisingly close. The biggest change was to allow strings and ranges as value types, which made the language immeasurably better. Initially, we wanted to only have Numbers; but allowing cells to contain ranges (composite values) and not just primitive values makes it a much more useful language. Otherwise, the syntax and semantics are very close to what was in our original proposal.
+The language we delivered ended up surprisingly close to our initial proposal. The biggest change was to allow strings and ranges as value types, which made the language immeasurably better. Initially, we wanted to only have Numbers; but allowing cells to contain ranges (composite values) and not just primitive values makes it a much more useful language. Otherwise, the syntax and semantics are very close to what was in our original proposal.
 
 Our initial plan was to precalculate the dependencies among cells as best as possible at compile time and generate code accordingly. However, it quickly became clear that the language was better with runtime-determined cell dependencies and we therefore had to give up on a precomputed graph. We didn't have time in this class to implement an explicit stack as opposed to using recursion, but this could be overcome if it had to be.
 
-Another fairly minor change was to eliminate the dimension signature for functions. As we played around with the language in the interpreter, it became clear that we weren't using them and it wasn't obvious why we would; they were dropped as a result.
+One minor change was to eliminate the dimension signature for functions. As we played around with the language in the interpreter, it became clear that we weren't using them and it wasn't obvious why we would; they were dropped as a result.
 
 
   \subsection{The Interpreter}
-  In our efforts to maximize our effectiveness when building the compiler, we additionally built a working interpreter to test the language semantics and run example Extend programs. This helped us determine language decisions at an earlier stage in the process, and helped us benchmark the success of our compiler by comparing the number of testcases passed by both.
+  Mainly because we implemented a declarative language, we built a working interpreter fairly early in the process to make sure we understood how to actually compile our language. Having it allowed us to test the language semantics, run example Extend programs, and make language decisions at an earlier stage. It also helped us benchmark the success of our compiler by comparing the number of testcases passed by both. A lot of the expressive power of Extend comes from the selection / slicing operator and a surprisingly high percentage of code in the compiler (20% of the C runtime!) is devoted to handling selections. Having the details worked out in the interpreter gave us a road map that made the corresponding LLVM code generation much more straightforward. In addition, it was not obvious before having a working interpreter that we would need to have a scope (closure) object in order to allow recursion; if we had missed this important detail, we likely would have needed to make drastic code or language changes late in the process. Finally, it gave us confidence that the various transformations we performed on the source produced correct results.
 
 \section{Team Member Responsibilities}
 

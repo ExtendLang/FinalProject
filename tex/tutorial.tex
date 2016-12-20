@@ -32,48 +32,6 @@ make
 	\medskip \noindent
 	This should produce an \texttt{out} file. Running \texttt{./out} should successfully execute the program.
 
-\section{Illustrating the Benefits of Extend}
-Spreadsheet applications require the use of manual input in order to apply the same calculation to a different set of data. Extend aims to tackle this problem by offering portability. Below is an example of a spreadsheet user calculating the unit vector of a column vector:
-
-\begin{center}
-\includegraphics[width=7cm]{img/unitvector.png}
-\end{center}
-
-\medskip \noindent The Excel user must manually input the data, and additionally make space for the intermediate steps of the calculation. If the number of elements of the vector were changed, the formulas would need to be changed in the spreadsheet; similarly, if you needed to do this on a second vector, you would have to copy and paste the cells doing intermediate calculations. Below is the equivalent function in Extend, written to work on any column vector that is passed in:
-
-\begin{lstlisting}
-	normalize_column_vector([m,1] arg) {
-	  [m,1] squared_lengths := #arg * #arg, normalized := #arg / vector_norm;
-	  vector_norm := sqrt(sum(squared_lengths));
-	  return normalized;
-	}
-\end{lstlisting}
-
-\medskip \noindent Another simple example is concatenating a row of strings of variable length with a common delimiter. This in an entirely manual operation for the spreadsheet user; a step-by-step attempt is shown below.
-
-\begin{center}
-\includegraphics[width=9cm,height=3cm]{img/concatenation.png}
-\end{center}
-
-\medskip \noindent Performing a delimiter 'join' like the above can be performed in a simple program in Extend without knowing the size of the row. The following function, which is included in the Extend standard library, performs this on arguments of any size and can be reused throughout the program.
-
-\begin{lstlisting}
-main(args){
-	bar := {"Hello", "Goodbye", "Hello Again"};
-	str := ", ";
-	return print_endline(concatRow(bar, str)); // prints "Hello, Goodbye, Hello Again"
-}
-
-concatRow([1,n] cells, joiner) {
-  [1,n] accum;
-  accum[0,0] = #cells;
-  accum[0,1:] = accum[[-1]] + joiner + #cells;
-  return accum[-1];
-}
-\end{lstlisting}
-
-\medskip \noindent As evidenced above by simple examples, Extend offers flexibility that is significantly harder to achieve with conventional spreadsheet applications. As the nature of the data grows in complexity and variety, Extend's value increases.
-
 \section{Writing Extend Code - The Basics}
 As is tradition, here is "Hello World" in Extend. The following program, \texttt{helloworld.xtnd}, illustrates a basic usage of the Extend language.
 
@@ -98,12 +56,21 @@ Below is a short tour of the features of Extend. More detail can be found in the
 		}
 	\end{lstlisting}
 
-	\medskip \noindent However, the file below is not a legal Extend program:
+	\medskip \noindent The next file compiles, but might surprise you by not printing anything.
+
+	\begin{lstlisting}
+		main(args){
+			foo := "Hello World!";     // Formula assigned, never evaluated
+			bar := print_endline(foo); // Formula assigned, never evaluated
+			return 0; 								 // Return expression is just 0
+		}
+	\end{lstlisting}
+	\medskip \noindent And this file isn't a grammatical Extend program:
 
 	\begin{lstlisting}
 		main(args){
 			foo := "Hello World!"; // OK
-			print_endline(foo);    // Not OK
+			print_endline(foo);    // Syntax error - not a declaration or assignment
 			return foo;
 		}
 	\end{lstlisting}
@@ -166,7 +133,7 @@ Below is a short tour of the features of Extend. More detail can be found in the
 		A variable is not a data type; it is a collection of one or more cells with assigned formulas. A range is a value, which is internally implemented as a pointer to a subset of a variable's cells. A range is always composed of more than one value; a variable may have a single cell. The variable "backing" a range may not have been explicitly defined by the developer; for example, range literals are implemented using an anonymous variable.
 
 	\subsection{Function Parameters - Using Dimensions}
-		Function arguments can be signed with dimensions. You can use these in two different ways, depending on what your function is doing. As a convenient way to make the size of a range available, just give the dimensions names:
+		Function arguments can be signed with dimensions. You can use these in two different ways, depending on what your function is doing. As a convenient way to find out the size of a range argument, just give the dimensions names:
 
 		\begin{lstlisting}
 			foo([m,n] arg){
@@ -175,11 +142,11 @@ Below is a short tour of the features of Extend. More detail can be found in the
 		\end{lstlisting}
 
 		\medskip \noindent
-		If you want to throw an error if your function is called with a range whose dimension aren't compatible with what the function is doing:
+		You can hardcode dimensions; if your function is called with a range whose dimensions don't match, a runtime error will occur:
 
 		\begin{lstlisting}
-			bar([2,2] arg){
-				return 0; // A runtime error will occur if bar isn't called with a 2x2 range.
+			determinant([2,2] arg){
+				return arg[0,0] * arg[1,1] - arg[0,1] * arg[1,0];
 			}
 		\end{lstlisting}
 		\medskip \noindent
@@ -191,7 +158,7 @@ Below is a short tour of the features of Extend. More detail can be found in the
 		\end{lstlisting}
 
 		\subsubsection{Enough theory. Show me a function that does something!}
-		No problem. This function adds its two arguments.
+		This function adds its two arguments.
 		\begin{lstlisting}
 			add(x, y) {
 				return x + y;
@@ -205,9 +172,9 @@ Below is a short tour of the features of Extend. More detail can be found in the
 			}
 		\end{lstlisting}
 		\medskip \noindent
-		Tell me about that bit with the square brackets!
+		Tell me about that bit where you wrote ptA[0]!
 		\subsubsection{Range Slicing \& Selection}
-		The euclideanDistance() function above used a selection to extract the individual values from a range. ptA[0] is the first value of ptA and ptA[1] is the second value. Although ranges have rows and columns, you only need to give one index if a range is a vector - Extend will figure out what you mean. You can also get a slice, with essentially the same syntax as Python:
+		The euclideanDistance() function above used a selection to extract the individual values from a range. ptA[0] is the first value of ptA and ptA[1] is the second value. Although ranges have rows and columns, you only need to give one index if a range is a vector---Extend will figure out what you mean. You can also get a slice, with essentially the same syntax as Python:
 		\begin{lstlisting}
 			addTheFirstThreeElements([1,n] some_vector) {
 				return sum(some_vector[:3]);
@@ -231,8 +198,14 @@ Below is a short tour of the features of Extend. More detail can be found in the
 				[n,1] profit := revenue[[0]] - cost[[0]];
 				return profit;
 			}
+			main(args) {
+				revenue := {82500; 97800; 560000};
+				cost := {80000; 105000; 130000};
+				profit := calcProfit(revenue, cost);
+				return print_endline(profit);
+			}
 		\end{lstlisting}
-		The extra square brackets around the 0 means that when each cell of profit is calculated, the index to use for revenue and cost is the same as the index of the cell that's being calculated; the number inside the brackets gets added to the row index of the left-hand-side cell. Here's how to calculate the change in profits from one quarter to the next:
+		Writing revenue[[0]] and cost[[0]] instead of revenue[0] and cost[0] means that the nth cell of profit is calculated by subtracting the nth cells of cost from the nth cell of revenue; the number inside the brackets gets added to the row index of the left-hand-side cell. Here's how to calculate the change in profits from one quarter to the next:
 		\begin{center}
 		\includegraphics[width=7cm]{img/tutPG.png}
 		\end{center}
@@ -241,10 +214,14 @@ Below is a short tour of the features of Extend. More detail can be found in the
 				[n,1] profitGrowth := profits[[0]] - profits[[-1]];
 				return profitGrowth;
 			}
+			main(args) {
+				profits := {2500;-7200;430000};
+				return print_endline(calcProfitGrowth(profits));
+			}
 		\end{lstlisting}
 
 		\medskip \noindent
-		Don't worry about the first cell - it'll be \texttt{empty}, not a program-ending \texttt{ArrayIndexOutOfBoundsException}. The selection syntax is very flexible; you can mix and match absolute and relative indexes and slices and omit the ones you don't need. There's a lot more examples in the language reference manual, but hopefully that should get you started. Study it well! There's just one more special way you should know about to make a selection, since it's probably the most common selection you'll need.
+		Don't worry about the first cell - it'll be \texttt{empty}, not a program-ending \texttt{ArrayIndexOutOfBoundsException}. The selection syntax is very flexible; you can mix and match absolute and relative indexes and slices and omit the ones you don't need. There's a lot more examples in the language reference manual, but hopefully that should get you started! There's just one more special way you should know about to make a selection, since it's probably the most common selection you'll need.
 
 		\subsubsection{The Hash Operator}
 		The hash operator gets the cell that's in "the equivalent place" of the cell whose formula is being calculated. Here's the quick way to add two matrices:
@@ -269,7 +246,14 @@ Below is a short tour of the features of Extend. More detail can be found in the
 		If you call hashAdd with $\left\{1,2,3\right\}$ as the first argument and $\left\{10;20;30\right\}$ as the second argument, your result will be the matrix in the image. Enjoy making selections!
 
 	\subsection{Cell Evaluation, Side Effects, and Precedence Expressions}
-	It's time for a little more theory. As mentioned before, a cell's value is calculated at most once. It is evaluated when it is the only cell selected from a variable, or when a selection containing the cell is assigned as a range to another cell. In general, the language is designed so you don't have to think about this! However, in the case of formulas that call functions with side effects, it's important to understand the behavior. When necessary, a precedence expression (using the \texttt{->} operator) can be used to force the evaluation of one expression before another. A precedence expression calculates the first expression, discards the result, and evaluates to the second expression. The following example should help clarify how cell evaluation is performed:
+	It's time for a little more theory. As mentioned before, a cell's value is calculated at most once. It is evaluated when it is the only cell selected from a variable, or when a selection containing the cell is assigned as a range to another cell. In general, the language is designed so you don't have to think about this! However, if a cell formula calls a function with side effects, it's important to keep in mind that it will only be evaluated once for each cell with that formula.
+
+	Another feature related to side effects is the precedence expression. If you want to call a function such as print\_endline() for its side effects, but don't want it to be your return statement, you can use a precedence expression (written with the \texttt{->} operator) to force the evaluation of one expression before another. For example, to display a prompt before asking the user for input, you could write:
+	\begin{lstlisting}
+	 	speed := print_endline("What is the air-speed velocity of an unladen swallow?")
+								-> readline(STDIN);
+	\end{lstlisting}
+	A precedence expression calculates the first expression, discards the result, and evaluates to the second expression. Putting it all together, the following example should help clarify how cell evaluation is performed:
 
 	\begin{lstlisting}
 	main(args) {
@@ -322,15 +306,17 @@ Below is a short tour of the features of Extend. More detail can be found in the
 
 		\subsubsection{If-Then-Else}
 		The two equivalent ways to write the ternary expression are as follows: \newline \newline
-		C/Java style: \texttt{condition ? expr\_if\_true : expr\_if\_false} \newline \newline
-		Spreadsheet style: \texttt{if(conditional, expr\_if\_true, expr\_if\_false)}
+		C/Java style: \texttt{condition ? expr\_if\_true : expr\_if\_false} \newline
+		Spreadsheet style: \texttt{if(conditional, expr\_if\_true, expr\_if\_false)} \newline \newline
+		The predicate is always evaluated; only one of \texttt{expr\_if\_true} or \texttt{expr\_if\_false} will be evaluated---or neither, if the predicate is \texttt{empty}.
+
 
 		\subsubsection{The Switch Expression}
 		Below is an example of the switch expression used in a function:
 
 		\begin{lstlisting}
 			odd_or_even(foo){
-				return switch(foo \% 2) {
+				return switch(foo % 2) {
 					case 0: "Even";
 					case 1: "Odd";
 					default: "Not an integer";
@@ -348,12 +334,53 @@ Below is a short tour of the features of Extend. More detail can be found in the
 		import "../programs/stat_library.xtnd"
 	\end{lstlisting}
 
+	\section{Illustrating the Benefits of Extend}
+	Excel and Google Sheets are pretty easy to use. Why go to all this trouble? Spreadsheet applications require the use of manual input in order to apply the same calculation to a different set of data. Extend aims to tackle this problem by offering portability. Below is an example of a spreadsheet user calculating the unit vector of a column vector:
+
+	\begin{center}
+	\includegraphics[width=7cm]{img/unitvector.png}
+	\end{center}
+
+	\medskip \noindent The Excel user must manually input the data, and additionally make space for the intermediate steps of the calculation. If the number of elements of the vector were changed, the formulas would need to be changed in the spreadsheet; similarly, if you needed to do this on a second vector, you would have to copy and paste the cells doing intermediate calculations. Below is the equivalent function in Extend, written to work on any column vector that is passed in:
+
+	\begin{lstlisting}
+		normalize_column_vector([m,1] arg) {
+		  [m,1] squared_lengths := #arg * #arg, normalized := #arg / vector_norm;
+		  vector_norm := sqrt(sum(squared_lengths));
+		  return normalized;
+		}
+	\end{lstlisting}
+
+	\medskip \noindent Another simple example is concatenating a row of strings of variable length with a common delimiter. This in an entirely manual operation for the spreadsheet user; a step-by-step attempt is shown below.
+
+	\begin{center}
+	\includegraphics[width=9cm,height=3cm]{img/concatenation.png}
+	\end{center}
+
+	\medskip \noindent Performing a delimiter 'join' like the above can be performed in a simple program in Extend without knowing the size of the row. The following function, which is included in the Extend standard library, performs this on arguments of any size and can be reused throughout the program.
+
+	\begin{lstlisting}
+	main(args){
+		bar := {"Hello", "Goodbye", "Hello Again"};
+		str := ", ";
+		return print_endline(concatRow(bar, str)); // prints "Hello, Goodbye, Hello Again"
+	}
+
+	concatRow([1,n] cells, joiner) {
+	  [1,n] accum;
+	  accum[0,0] = #cells;
+	  accum[0,1:] = accum[[-1]] + joiner + #cells;
+	  return accum[-1];
+	}
+	\end{lstlisting}
+
+	\medskip \noindent As evidenced above by simple examples, Extend offers flexibility that is significantly harder to achieve with conventional spreadsheet applications. As the nature of the data grows in complexity and variety, Extend's value increases.
 
 \section{Standard Library Functions}
-Extend offers an assortment of standard library functions. Extend imports \texttt{stdlib.xtnd}, which has aggregated all the standard library functions for the user's disposal.
+Extend offers an assortment of standard library functions. The standard library is automatically imported into each Extend program. 
 
 \medskip \noindent
-While their usage will be covered in more length in the Language Reference Manual, here are some of the more useful standard library functions to remember.
+A complete listing can be found in the Language Reference Manual; some of the more useful standard library functions to remember.
 	\subsection{Basic Functions}
 		\subsubsection{The toString() Function}
 		The \texttt{toString()} function takes an argument and renders its value as a string.

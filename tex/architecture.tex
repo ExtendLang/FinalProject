@@ -60,7 +60,7 @@ The transformer is the first step in converting the AST into LLVM code. It takes
 
   Before actually calling the main Extend entry point, our executable initializes a global array with the appropriate variable definitions for each function. When an Extend function is called, it simply copies the appropriate pointer into that array into its scope object.
 
-  Therefore, leaving aside all the variable multiplication resulting from transformations, and ignoring size assertions:
+  Leaving aside the variables introduced by the transformation step, this Extend function:
   \begin{lstlisting}
     foo() {
       x := 1;
@@ -92,8 +92,8 @@ The transformer is the first step in converting the AST into LLVM code. It takes
   \end{lstlisting}
   \medskip \noindent
 
-  Since the newly initialized scope object would have held all NULL pointers for the instances, getVar() would have ended up calling instantiate\_variable, which would have determined that x had 1 row and 1 column; there was only a single formula for x, applying to all cells of x; and that that formula corresponded to the function pointer indicated in the variable definition.
-  When getVal was called, the value in the [0,0]th cell would similarly have been NULL. Therefore, getVal() would have determined the appropriate formula, and then called that formula-function with a pointer to the scope, and (0,0) for the row and column.
+  Since the newly initialized scope object will hold all NULL pointers for the instances, getVar() will end up calling instantiate\_variable, which will  determine that x has 1 row and 1 column; there is only a single formula for x, applying to all cells of x; and that that formula corresponds to the function pointer indicated in the variable definition.
+  When getVal is called, the value pointer for the [0,0]th cell will similarly be NULL. As a result, getVal() will determine the function pointer for the appropriate formula and then call it, supplying as arguments a pointer to the scope and (0,0) for the row and column.
 
   The actual C structures used are listed below:
   \begin{lstlisting}
@@ -163,4 +163,3 @@ The transformer is the first step in converting the AST into LLVM code. It takes
   	value_p *functionParams;
   };
   \end{lstlisting}
-  

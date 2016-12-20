@@ -15,15 +15,15 @@ for filename in $(ls $TEST_FILES); do
     SED_TEST_NAME=$(echo $filename | sed -e s/_/-/g)
     echo "\medskip \noindent \texttt{$SED_TEST_NAME}" >> $TEX_FILE
     echo -e "\n" >> $TEX_FILE
-    echo "\\begin{lstlisting}" >> $TEX_FILE
+    echo "\begin{lstlisting}" >> $TEX_FILE
     cat $TEST_FILES/$filename >> $TEX_FILE
-    echo "\\end{lstlisting}" >> $TEX_FILE
+    echo "\end{lstlisting}" >> $TEX_FILE
     echo -e "\n" >> $TEX_FILE
     echo "\medskip \noindent \texttt{$SED_TEST_NAME - Expected Output}" >> $TEX_FILE
     echo -e "\n" >> $TEX_FILE
-    echo "\\begin{lstlisting}" >> $TEX_FILE
+    echo "\begin{lstlisting}" >> $TEX_FILE
     cat $EXPECTED_OUTPUT/$filename.exp >> $TEX_FILE
-    echo "\\end{lstlisting}" >> $TEX_FILE
+    echo "\end{lstlisting}" >> $TEX_FILE
     echo -e "\n" >> $TEX_FILE
 done
 echo -e "\n" >> $TEX_FILE

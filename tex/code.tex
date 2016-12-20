@@ -1,6 +1,8 @@
 \chapter{Extend Code Listing}
 \section{scanner.mll}
 \begin{lstlisting}{ocaml}
+(* jss2272 isk2108 ky2294 *)
+
 {
   open Lexing
   open Parser
@@ -106,6 +108,7 @@ and read_string buf =
 \section{parser.mly}
 \begin{lstlisting}{ocaml}
 /* Ocamlyacc parser for Extend */
+/* jss2272 ns3158 */
 
 %{
 open Ast
@@ -362,6 +365,7 @@ dim:
 \end{lstlisting}
 \section{ast.ml}
 \begin{lstlisting}{ocaml}
+(* jss2272 *)
 type op       = Plus | Minus | Times | Divide | Mod | Pow |
                 LShift | RShift | BitOr | BitAnd | BitXor |
                 Eq | Gt | GtEq | Lt | LtEq | LogAnd | LogOr
@@ -648,6 +652,8 @@ let allow_range_literal = function
 \end{lstlisting}
 \section{transform.ml}
 \begin{lstlisting}{ocaml}
+(* jss2272 *)
+
 open Ast
 open Lexing
 open Parsing
@@ -1071,6 +1077,8 @@ let create_ast filename =
 \end{lstlisting}
 \section{semant.ml}
 \begin{lstlisting}{ocaml}
+(* jss2272 *)
+
 open Ast
 
 exception IllegalExpression of string;;
@@ -1184,6 +1192,11 @@ let check_semantics (globals, functions, externs) =
 \end{lstlisting}
 \section{codeGenTypes.ml}
 \begin{lstlisting}{ocaml}
+(*
+jss2272
+ns3158
+*)
+
 type something = {
   var_instance_t : Llvm.lltype;
   subrange_t : Llvm.lltype;
@@ -1484,7 +1497,11 @@ let setup_types ctx =
 \end{lstlisting}
 \section{codegen.ml}
 \begin{lstlisting}{ocaml}
-(* Extend code generator *)
+(*
+  Extend code generator
+  jss2272
+  ns3158
+ *)
 
 open Ast
 open Semant
@@ -2391,6 +2408,7 @@ let build_this ast_mapped =
 \end{lstlisting}
 \section{linker.ml}
 \begin{lstlisting}{ocaml}
+(* ns3158 *)
 module StringSet = Set.Make(String)
 let link xtndOut ast compiler outputFile =
   let tmpFilenameLL = Filename.temp_file "" ".ll"
@@ -2416,6 +2434,8 @@ let link xtndOut ast compiler outputFile =
 \end{lstlisting}
 \section{main.ml}
 \begin{lstlisting}{ocaml}
+(* jss2272 *)
+
 open Ast;;
 
 let print_ast = ref false
@@ -2457,6 +2477,8 @@ else ();
 \end{lstlisting}
 \section{lib.c}
 \begin{lstlisting}{c}
+/* jss2272 ns3158 isk2108 */
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
@@ -2783,6 +2805,8 @@ value_p extend_fromASCII(value_p val) {
 \end{lstlisting}
 \section{runtime.c}
 \begin{lstlisting}{c}
+/* jss2272 ns3158 */
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
@@ -3593,6 +3617,8 @@ value_p getVal(struct var_instance *inst, int r, int c) {
 \end{lstlisting}
 \section{stdlib.xtnd}
 \begin{lstlisting}
+/* jss2272 ns3158 */
+
 global rounding_cutoff := 1e-7;
 global digits_after_decimal := 6;
 

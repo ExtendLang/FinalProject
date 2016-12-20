@@ -27,7 +27,7 @@ The Extend compilation process consists of several source files, each of which p
   The parser converts the tokens read by the scanner into a syntax tree deemed acceptable grammar within the Extend Language. This is converted into an Abstract Syntax Tree, which has nodes that can be consumed by the back end of the Extend compiler.
 
   \subsection{The Transformer}
-The transformer is the first step in converting the AST into LLVM code. It takes the AST and reduces its breadth. This step is done to preserve the convenience for the user, but reduces the complexity for the actual compile step. It's important to note that the amount of transformation here is large; every expression on the left hand side, even if just a single number, gets turned into a variable.
+The transformer is the first step in converting the AST into LLVM code. It takes the AST and reduces its breadth. This step is done to preserve the convenience for the user, but reduces the complexity for the actual compile step. A large number of internal variables are created in the process.
 
   \medskip \noindent This is how the user declares a variable.
   \begin{lstlisting}
@@ -44,16 +44,33 @@ The transformer is the first step in converting the AST into LLVM code. It takes
   \medskip \noindent
   A similar transformation is performed on formula assignments:
   \begin{lstlisting}
+    // Before Transformation:
     foo[g(x):4,3+3] = "Couldn't you have stuck to integers?";
-  \end{lstlisting}
-  is transformed into:
-  \begin{lstlisting}
+
+    // After Transformation:
     start_row := g(x);
     end_row   := 4;
     start_col := 3+3;
     foo[start_row:end_row,start_col] = "Couldn't you have stuck to integers?";
   \end{lstlisting}
-  Every expression before or after a comma or colon will become an internal temporary variable in the desugaring process. In addition to generating temporary variables, Extend also transforms \texttt{\&\&, ||, and switch} into ternary conditionals to enable short-circuiting. Finally, the transformer performs some semantic analysis to ensure that there are no duplicate variables within a function, and no duplicate functions within a program.
+  \medskip \noindent
+  Every expression on the left hand side before or after a comma or colon will become an internal temporary variable in the desugaring process. Internal variables are also created for the return expression and for any size assertions induced by the function signature:
+  \begin{lstlisting}
+    // Before Transformation:
+    foo([m,n] arg1, [m, 1] arg2) {
+      return m*n;
+    }
+
+    // After Transformation:
+    foo(arg1, arg2) {
+      m := numRows(arg1);
+      n := numCols(arg1);
+      asserts := (m == numRows(arg2)) && (1 == numCols(arg2));
+      return_value := m*n;
+      return return_value;
+    }
+  \end{lstlisting}
+  In addition to generating temporary variables, Extend also transforms \texttt{\&\&, ||, and switch} into ternary conditionals to enable short-circuiting. Finally, the transformer performs some semantic analysis to ensure that there are no duplicate variables within a function, and no duplicate functions within a program.
 
   \subsection{The Semantic Analyzer}
   The semantic analyzer consumes the reduced AST. It ensures that Extend functions, variables, expressions, and more are being used properly at compile time, and throws flavorful exceptions to the user so that they may better understand why their program was illegal. In Extend, there are no real type errors involving expressions on the right-hand-side of a formula, as we attempt to degrade many gracefully. There are type errors possible on the left-hand side, but since they are assigned dynamically, very few can be determined at compile time. For function calls, the semantic analyzer ensures that the function exists and is called with the right number of arguments; and for variables, the analysis checks that the identifier refers to a real variables within the appropriate scope.

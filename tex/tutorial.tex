@@ -61,7 +61,7 @@ Spreadsheet applications require the use of manual input in order to apply the s
 main(args){
 	bar := {"Hello", "Goodbye", "Hello Again"};
 	str := ", ";
-	return print_endline(concatRow(bar, str));\\ prints "Hello, Goodbye, Hello Again"
+	return print_endline(concatRow(bar, str)); // prints "Hello, Goodbye, Hello Again"
 }
 
 concatRow([1,n] cells, joiner) {
@@ -79,8 +79,7 @@ As is tradition, here is "Hello World" in Extend. The following program, \texttt
 
 \begin{lstlisting}
 	main(args) {
-	  foo := printv(1,"Hello World\n") -> 0;
-	  return foo;
+	  return print_endline("Hello, World!");
 	}
 \end{lstlisting}
 
@@ -95,7 +94,7 @@ Below is a short tour of the features of Extend. More detail can be found in the
 	\begin{lstlisting}
 		main(args){
 			foo := "Hello World!";     // Combined var declaration and formula assignment
-			return print_endline(foo); // Return expression is a call to print_endline().
+			return print_endline(foo); // Return expression is a call to print_endline()
 		}
 	\end{lstlisting}
 
@@ -112,34 +111,11 @@ Below is a short tour of the features of Extend. More detail can be found in the
 	\medskip \noindent As illustrated, Extend only evaluates what is needed to produce the value required by \texttt{return}. Any non-essential declarations or formula assignments will not be evaluated by the program.
 
 	\subsection{Functions}
-	An Extend program is mostly composed of functions. They are declared with the syntax \texttt{function\_name([optional\_dimensions] function\_arguments)\{...\}}. Below is the syntax of the \texttt{main} function, which is needed to run Extend code, within a simple Extend program.
-
-	\begin{lstlisting}
-	main(args){
-			return 0;
-	}
-	\end{lstlisting}
-	% Perhaps a more informative program - but not too difficult.
-
-	\medskip \noindent
- 	The return type of a function is a value that can be of any type or dimensions. \textbf{Ranges} will be discussed in a later section of this chapter. A function is composed of variable declarations and formula assignments and concludes with the \textbf{return} statement.
+	An Extend program is mostly composed of functions, declared with the usual syntax \texttt{f(x, y, ...)}. Each Extend program must have a main() function taking one argument, as shown above in "Hello World". Inside the function, this parameter will contain the command-line arguments. A function is composed of variable declarations and formula assignments and concludes with the \textbf{return} statement. It can return a value of any of the types discussed below, and it doesn't always need to return the same type.
 	Note that the \textbf{return} statement is always the last statement in the function.
 
-		\subsubsection{Function Parameters}
-		Function parameters consist of zero or more ranges, signed with an optional dimension. If the arguments have been written with dimensions, those dimensions will be verified at runtime. this can either be used to initialize a variable with the dimensions of the argument, or verify that the dimensions are what the function expects.
-
-		\begin{lstlisting}
-			foo([m,n] arg){
-				return m * n; \\ m and n initialized through arg
-			}
-
-			bar([1,1] arg){
-				return 0; \\ 1 by 1 ranges should be primitive data types. If arg is not a primitive, a runtime error will be thrown
-			}
-		\end{lstlisting}
-
 	\subsection{Data Types}
-	Extend has three primitive data types: Numbers, Strings, and \texttt{empty}; and one composite type, Range. An example of each is shown below.
+	Extend has three primitive data types: Number, String, and \texttt{empty}; and one composite type, Range. An example of each is shown below.
 
 	\begin{lstlisting}
 		myNumber    := 5;
@@ -170,12 +146,10 @@ Below is a short tour of the features of Extend. More detail can be found in the
 	\textbf{Note} that we declare a variable and assign a formula to all of its cells in a single line with \texttt{:=}. If the variable has already been declared, a formula must be assigned using \texttt{=} instead of \texttt{:=}. As illustrated in this example, a single formula can be assigned to multiple cells of a variable with the slice syntax. The converse is not true: multiple formulas applying to a single cell will cause a runtime error. The contents of the slice, as well as the dimensions of the variable, can be any expression that evaluates to a number, not just a literal number. For example, this code snippet assigns the dimensions based on the \texttt{howBig()} function and the "left" and "right" formulas based on the \texttt{breakpoint()} function:
 
 	\begin{lstlisting}
-		breakpoint() {
-			return 7;
-		}
-		howBig() {
-			return 11;
-		}
+		breakpoint() { return 7; }
+
+		howBig() { return 11;	}
+
 		foo_func() {
 			[1,howBig()] foo;
 			foo[0, :breakpoint()] = "left";
@@ -186,47 +160,116 @@ Below is a short tour of the features of Extend. More detail can be found in the
 	\end{lstlisting}
 
 	\medskip \noindent
-	This example also illustrates that the start (or end) index of a slice can be omitted if the developer wants the formula to apply from the beginning (or to the end) of the dimension, and that negative numbers can be used in a slice to count backwards from the end. As with all values in Extend, the dimensions of a variable, and the slices to which a formula applies, are immutable. The first time a variable is referred to (directly or indirectly) by the return expression, its dimensions and the formula assignment slices are computed; from that point on, they never change. In the example above, the howBig() function is invoked once, but the breakpoint() function is actually called twice: once for the "left" formula, and once for the "right" formula.
+	This example also illustrates that the start (or end) index of a slice can be omitted if the developer wants the formula to apply from the beginning (or to the end) of the dimension, and that negative numbers can be used in a slice to count backwards from the end. The first time a variable is referred to (directly or indirectly) by the return expression, its dimensions and the formula assignment slices are computed; from that point on, they never change. A subtle point in the example above: the howBig() function is invoked once, but the breakpoint() function is actually called twice: once for the "left" formula, and once for the "right" formula.
 
-		\subsubsection{Variables vs. Ranges}
+		\subsubsection{Variables vs. Ranges - Similar, but not the same}
 		A variable is not a data type; it is a collection of one or more cells with assigned formulas. A range is a value, which is internally implemented as a pointer to a subset of a variable's cells. A range is always composed of more than one value; a variable may have a single cell. The variable "backing" a range may not have been explicitly defined by the developer; for example, range literals are implemented using an anonymous variable.
 
-		\subsubsection{Range Slicing \& Selection}
-		Python-style array-slicing syntax can be applied to ranges, which will return a subrange based on either absolute or relative indexing. All indices are zero-based.
+	\subsection{Function Parameters - Using Dimensions}
+		Function arguments can be signed with dimensions. You can use these in two different ways, depending on what your function is doing. As a convenient way to make the size of a range available, just give the dimensions names:
 
 		\begin{lstlisting}
-			foo[0,2] \\ The cell in the first row, third column
-			foo[0,:] \\ The range of cells in the first row
-			foo[0,[1]] \\ The range in the column that is 1 column right of the left-hand-side cell.
-			foo[,] \\ Cell in first row, first column if 1 by 1. If not, then relative first row and relative first column
-		\end{lstlisting}
-
-		\medskip \noindent
-		More examples and detail can be found in the next chapter.
-
-		\subsubsection{The Hash Operator}
-		A common case for ranges in Excel is to perform calculations on specific cells. For example, \texttt{foo[,]} is commonly used to retrieve the cell that is being calculated on.
-		Since this is a popular use case, the \texttt{\#} operator will perform the same functionality.
-
-		\subsubsection{Application on Ranges}
-		Extend, in the vein of spreadsheets, allows the programmer to apply functions cell-wise on a range. Using the \texttt{\#} operator, we can perform cell-wise multiplication across two ranges.
-
-		\begin{lstlisting}
-			foo([m,n] arg1, [m,n] arg2){
-				[m,n] bar := #arg1 * #arg2; \\ Multiplies the cell in arg1 with the corresponding cell in arg2.
-				return bar;
+			foo([m,n] arg){
+				return m * n; // m and n initialized through arg
 			}
 		\end{lstlisting}
 
 		\medskip \noindent
-		This is an incredibly powerful aspect of Extend. Make sure to study it well!
+		If you want to throw an error if your function is called with a range whose dimension aren't compatible with what the function is doing:
 
-		\subsubsection{Range Attribute Functions}
-		Extend has the \texttt{row()} and \texttt{column()} functions, which respectively return the row and column of the cell that is being calculated at that point in time.
-		There is also a \texttt{size(expr)} function, which returns a 1 by 2 range; the first cell contains the number of rows, and the second cell contains the number of columns.
+		\begin{lstlisting}
+			bar([2,2] arg){
+				return 0; // A runtime error will occur if bar isn't called with a 2x2 range.
+			}
+		\end{lstlisting}
+		\medskip \noindent
+		You can also combine these two mechanisms, by repeating a variable name:
+		\begin{lstlisting}
+			betterBeSameSize([m,n] arg1, [m,n] arg2) {
+				return "I guess they were the same size."; // Error if they were different
+			}
+		\end{lstlisting}
+
+		\subsubsection{Enough theory. Show me a function that does something!}
+		No problem. This function adds its two arguments.
+		\begin{lstlisting}
+			add(x, y) {
+				return x + y;
+			}
+		\end{lstlisting}
+		\medskip \noindent
+		Come on, a real function.
+		\begin{lstlisting}
+			euclideanDistance([1,2] ptA, [1,2] ptB) {
+				return sqrt((ptA[0] - ptB[0]) ** 2 + (ptA[1] - ptB[1]) ** 2);
+			}
+		\end{lstlisting}
+		\medskip \noindent
+		Tell me about that bit with the square brackets!
+		\subsubsection{Range Slicing \& Selection}
+		The euclideanDistance() function above used a selection to extract the individual values from a range. ptA[0] is the first value of ptA and ptA[1] is the second value. Although ranges have rows and columns, you only need to give one index if a range is a vector - Extend will figure out what you mean. You can also get a slice, with essentially the same syntax as Python:
+		\begin{lstlisting}
+			addTheFirstThreeElements([1,n] some_vector) {
+				return sum(some_vector[:3]);
+			}
+		\end{lstlisting}
+		\medskip \noindent
+		If you're dealing with a 2-D range, you can get a rectangle by slicing both the rows and the columns.
+		\begin{lstlisting}
+			topLeftCorner(m) {
+				return m[:2,:2] // Returns a 2x2 range with m[0,0], m[0,1], m[1,0], m[1,1]
+			}
+		\end{lstlisting}
+		\medskip \noindent
+		\subsubsection{How is this like a spreadsheet?}
+		Here's the Extend equivalent of this spreadsheet:
+		\begin{center}
+		\includegraphics[width=7cm]{img/tutRCP.png}
+		\end{center}
+		\begin{lstlisting}
+			calcProfit([n,1] revenue, [n,1] cost) {
+				[n,1] profit := revenue[[0]] - cost[[0]];
+				return profit;
+			}
+		\end{lstlisting}
+		The extra square brackets around the 0 means that when each cell of profit is calculated, the index to use for revenue and cost is the same as the index of the cell that's being calculated; the number inside the brackets gets added to the row index of the left-hand-side cell. Here's how to calculate the change in profits from one quarter to the next:
+		\begin{center}
+		\includegraphics[width=7cm]{img/tutPG.png}
+		\end{center}
+		\begin{lstlisting}
+			calcProfitGrowth([n,1] profits) {
+				[n,1] profitGrowth := profits[[0]] - profits[[-1]];
+				return profitGrowth;
+			}
+		\end{lstlisting}
+
+		\medskip \noindent
+		Don't worry about the first cell - it'll be \texttt{empty}, not a program-ending \texttt{ArrayIndexOutOfBoundsException}. The selection syntax is very flexible; you can mix and match absolute and relative indexes and slices and omit the ones you don't need. There's a lot more examples in the language reference manual, but hopefully that should get you started. Study it well! There's just one more special way you should know about to make a selection, since it's probably the most common selection you'll need.
+
+		\subsubsection{The Hash Operator}
+		The hash operator gets the cell that's in "the equivalent place" of the cell whose formula is being calculated. Here's the quick way to add two matrices:
+		\begin{lstlisting}
+			matrixAdd([m,n] arg1, [m,n] arg2) {
+				[m,n] result := #arg1 + #arg2;
+				return result;
+			}
+		\end{lstlisting}
+		\medskip \noindent
+		And here's one more example to show its flexibility, with the spreadsheet equivalent:
+		\begin{center}
+		\includegraphics[width=7cm]{img/tutHash.png}
+		\end{center}
+		\begin{lstlisting}
+			hashAdd([1,n] arg1, [m,1] arg2) {
+				[m,n] result := #arg1 + #arg2;
+				return result;
+			}
+		\end{lstlisting}
+		\medskip \noindent
+		If you call hashAdd with $\left\{1,2,3\right\}$ as the first argument and $\left\{10;20;30\right\}$ as the second argument, your result will be the matrix in the image. Enjoy making selections!
 
 	\subsection{Cell Evaluation, Side Effects, and Precedence Expressions}
-	As mentioned before, a cell's value is calculated at most once. It is evaluated when it is the only cell selected from a variable, or when a selection containing the cell is assigned as a range to another cell. In general, the language is designed so you don't have to think about this! However, in the case of formulas that call functions with side effects, it's important to understand the behavior. When necessary, a precedence expression (using the \texttt{->} operator) can be used to force the evaluation of one expression before another. A precedence expression calculates the first expression, discards the result, and evaluates to the second expression. The following example should help clarify how cell evaluation is performed:
+	It's time for a little more theory. As mentioned before, a cell's value is calculated at most once. It is evaluated when it is the only cell selected from a variable, or when a selection containing the cell is assigned as a range to another cell. In general, the language is designed so you don't have to think about this! However, in the case of formulas that call functions with side effects, it's important to understand the behavior. When necessary, a precedence expression (using the \texttt{->} operator) can be used to force the evaluation of one expression before another. A precedence expression calculates the first expression, discards the result, and evaluates to the second expression. The following example should help clarify how cell evaluation is performed:
 
 	\begin{lstlisting}
 	main(args) {
@@ -266,6 +309,9 @@ Below is a short tour of the features of Extend. More detail can be found in the
 		\begin{lstlisting}
 			"Hello " + "World\n"
 		\end{lstlisting}
+
+		\subsubsection{The "Where am I?" operators}
+		Extend has the \texttt{row()} and \texttt{column()} functions, which respectively return the row and column of the left-hand-side cell whose formula is being calculated.
 
 		\subsubsection{The size and typeof operators}
 		Extend offers a \texttt{typeof(expr)} operator, which takes an expression and returns Number, String, Range, or Empty (as a string). It also has the \texttt{size(expr)} operator, which returns the dimensions of its argument as a 1 x 2 range.
@@ -313,7 +359,7 @@ While their usage will be covered in more length in the Language Reference Manua
 		The \texttt{toString()} function takes an argument and renders its value as a string.
 
 		\begin{lstlisting}
-			return "Hello " + toString(14); \\ "Hello 14"
+			return "Hello " + toString(14); // "Hello 14"
 		\end{lstlisting}
 
 		\subsubsection{The Print Function}
@@ -325,7 +371,7 @@ While their usage will be covered in more length in the Language Reference Manua
 		\begin{lstlisting}
 			main(args){
 				bar := sqrt(16);
-				return print_endline(bar) -> 0; \\ Prints 4 to stdout
+				return print_endline(bar) -> 0; // Prints 4 to stdout
 			}
 		\end{lstlisting}
 
@@ -334,7 +380,7 @@ While their usage will be covered in more length in the Language Reference Manua
 
 	\begin{lstlisting}
 		main(args){
-		  return write(STDOUT, read(open("test_file.txt", "r"),5)) -> 0; \\ Writes 5 characters from test_file.txt to stdout
+		  return write(STDOUT, read(open("test_file.txt", "r"),5)) -> 0; // Writes 5 characters from test_file.txt to stdout
 		}
 	\end{lstlisting}
 
@@ -365,7 +411,7 @@ While their usage will be covered in more length in the Language Reference Manua
 		\subsubsection{Repeat}
 		The \texttt{repeat} function takes a string and number \texttt{x}, and returns a string where the argument string is repeated \texttt{x} times.
 		\begin{lstlisting}
-			repeat("Hello", 3) \\ "HelloHelloHello"
+			repeat("Hello", 3) // "HelloHelloHello"
 		\end{lstlisting}
 
 		\subsubsection{Split \& Split to Range}

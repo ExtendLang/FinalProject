@@ -42,19 +42,30 @@ The transformer is the first step in converting the AST into LLVM code. It takes
   \end{lstlisting}
 
   \medskip \noindent
-  Every expression before or after a comma or colon will become an internal temporary variable in the desugaring process. The transformer also transforms \texttt{\&\&, ||, and switch} into ternary conditionals to enable short-circuiting. Lastly, the transformer performs some semantic analysis to ensure that there are no duplicate variables within a function, and no duplicate functions within a program.
+  A similar transformation is performed on formula assignments:
+  \begin{lstlisting}
+    foo[g(x):4,3+3] = "Couldn't you have stuck to integers?";
+  \end{lstlisting}
+  is transformed into:
+  \begin{lstlisting}
+    start_row := g(x);
+    end_row   := 4;
+    start_col := 3+3;
+    foo[start_row:end_row,start_col] = "Couldn't you have stuck to integers?";
+  \end{lstlisting}
+  Every expression before or after a comma or colon will become an internal temporary variable in the desugaring process. In addition to generating temporary variables, Extend also transforms \texttt{\&\&, ||, and switch} into ternary conditionals to enable short-circuiting. Finally, the transformer performs some semantic analysis to ensure that there are no duplicate variables within a function, and no duplicate functions within a program.
 
   \subsection{The Semantic Analyzer}
-  The semantic analyzer consumes the reduced AST. It ensures that Extend functions, variables, expressions, and more are being used properly at compile time, and throws flavorful exceptions to the user so that they may better understand why their program was illegal. In Extend, there are no real type errors, as we attempt to degrade many gracefully. However, the semantic analyzer ensures that functions exist and have the right number of arguments, and that identifiers refer to real variables within their scope.
+  The semantic analyzer consumes the reduced AST. It ensures that Extend functions, variables, expressions, and more are being used properly at compile time, and throws flavorful exceptions to the user so that they may better understand why their program was illegal. In Extend, there are no real type errors involving expressions on the right-hand-side of a formula, as we attempt to degrade many gracefully. There are type errors possible on the left-hand side, but since they are assigned dynamically, very few can be determined at compile time. For function calls, the semantic analyzer ensures that the function exists and is called with the right number of arguments; and for variables, the analysis checks that the identifier refers to a real variables within the appropriate scope.
 
   \subsection{The Code Generator}
- Once the Extend AST passes semantic analysis, the code generator turns the reduced AST into LLVM code. Since the variable evaluation approach of Extend is not imperative, this process is fairly elaborate. Specifically for each Extend function it creates a collection of variable blueprints. In its most basic form each blueprint has a reference to one or more formulas that calculate the value of the variable. The intrinsics of this approach are beyond the scope of this overview.
+ Once the Extend AST passes semantic analysis, the code generator turns the reduced AST into LLVM code. Since the variable evaluation approach of Extend is not imperative, this process is fairly elaborate. There is one function created per formula, which is available to be called if the value of a cell with that formula is needed; and there is one function created per Extend function, which initializes a scope object with a collection of blueprints for all the local variables of that function. In its most basic form, each blueprint has a reference to one or more formulas that calculate the value of the variable. The section on the runtime goes into more detail on how this architecture is used.
 
   \subsection{The Linker}
   If successful LLVM IR is generated, the linker will adopt the role of building an executable object from the \texttt{.ll} file. This includes compiling it to an object file and linking the runtime environment along with other imported libraries.
 
   \section{Extend Runtime}
-  Extend's cell values are lazily evaluated, which means they need to be implemented using function pointers. For each function that the Extend developer writes, the corresponding LLVM function that is generated is essentially identical: allocate a scope object for that function call, initialize that object with the appropriate set of variable definitions and the function arguments to that scope object, and then evaluate the variables corresponding to the size assertion and the return expression for that function. All of the "individualized" code lives in what we referred to as the formula-functions; for each distinct formula, the compiler generates a corresponding function that can be called when the corresponding cell's value is needed. Each formula-function shared the same signature: the arguments were a pointer to a scope and the row and column number of the cell being evaluated, and the return value was a pointer to a value struct (which holds the type and contents of the value.)
+  Extend's cell values are lazily evaluated, which means they need to be implemented using function pointers. For each function that the Extend developer writes, the corresponding LLVM function that is generated is essentially identical: allocate a scope object for that function call, initialize that object with the appropriate set of variable definitions and the function arguments to that scope object, and then evaluate the variables corresponding to the size assertion and the return expression for that function. All of the "individualized" code lives in what we refer to as the formula-functions; for each distinct formula, the compiler generates a corresponding function that can be called when the corresponding cell's value is needed. Each formula-function shares the same signature: the arguments are a pointer to a scope and the row and column number of the cell being evaluated, and the return value is a pointer to a value struct (which holds the type and contents of the value.)
 
   The two main functions of our C runtime, therefore, are instantiate\_variable(), which looks at the variable definition "blueprint" and calculates the actual dimensions of the variable for that particular function call, and calculates the actual range of cells to which each formula applies; and getVal(), which determines if a particular cell value has already been calculated or not, and calls the appropriate formula-function if not.
 

@@ -1,5 +1,5 @@
 \chapter{Introduction}
-Extend is a declarative programming language meant to support spreadsheet-like functionality. It contains features such as side-effect free values, immutability, and automatic formula adjustments relative to rows and columns. Extend is compiled to the LLVM (Low Level Virtual Machine) intermediate representation, which in turn is reduced to machine assembly. Extend takes inspiration from software such as Microsoft Excel, which allows users to link several formulae on dependent groups of data together, but takes this technology a step further by allowing users to encapsulate such calculations as functions.
+Extend is a declarative programming language meant to support spreadsheet-like functionality. It contains features such as side-effect-free values, immutability, and automatic formula adjustments relative to rows and columns. Extend is compiled to the LLVM (Low Level Virtual Machine) intermediate representation, which in turn is reduced to machine assembly. Extend takes inspiration from software such as Microsoft Excel, which allows users to link several formulae on dependent groups of data together, but takes this technology a step further by allowing users to encapsulate such calculations as functions.
 
 \section{Inspiration \& Use Cases}
 
@@ -12,10 +12,10 @@ Extend is a declarative programming language meant to support spreadsheet-like f
 		\end{itemize}
 	With these changes in mind, we attempted to keep the semantics as similar as possible to traditional spreadsheet programs; this meant implementing a dynamically typed language that is tolerant of potential errors in its input data. Extend degrades gracefully in the presence of potential data errors.
 	\newline \newline
-	Spreadsheet applications cannot be 'run' on different sets of input data. Extend was conceptualized as a standalone application that removes the manual element of entering new inputs. In building this language, our mission was to bring the best of spreadsheets and computation into one product.
+	Spreadsheet applications cannot be 'run' on different sets of input data. Extend was conceptualized as a language to create standalone executables that can be repeatedly run on multiple files, theremby removing the need to manually enter inputs. In building this language, our mission was to bring the best of spreadsheets and computation into one product.
 
 	\subsection{Complex Calculations Across Many Inputs}
-	Extend is spiritually closer in behavior to Microsoft Excel than other conventional programming languages. In one line of code, a single formula can be assigned to to all of the cells in a \texttt{range}, one of Extend's data types.
+	Extend is spiritually closer in behavior to Microsoft Excel than traditional imperative programming languages. The order of computation is determined implicitly by the language rather than explicitly by the developer. In addition, in one line of code, a single formula can be assigned to all the cells in a variable. The feature acts similarly to Python's list comprehension, or OCaml's \texttt{List.map} functionality.
 
 	\subsection{Flexibility}
-	Extend allows the dimensions of ranges to be determined dynamically at runtime, and handles most type errors by degrading gracefully instead of crashing the program. The standard library that Extend delivers includes a subset of the functions that are built into conventional spreadsheet applications.
+	Extend allows the dimensions of ranges to be determined dynamically at runtime, and handles most type errors by degrading gracefully instead of crashing the program. The standard library that Extend delivers includes a subset of the functions that are built into conventional spreadsheet applications. As many of these as possible were implemented in Extend itself.

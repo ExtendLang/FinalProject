@@ -39,5 +39,5 @@ would result in the LLVM equivalent of the following pseudocode (not written in 
 \end{lstlisting}
 \medskip \noindent
 
-Since the newly initialized scope object would have held all NULL pointers for the instances, getVar() would have ended up calling instantiate_variable, which would have determined that x had 1 row and 1 column; there was only a single formula for x, applying to all cells of x; and that that formula corresponded to the function pointer indicated in the variable definition.
+Since the newly initialized scope object would have held all NULL pointers for the instances, getVar() would have ended up calling instantiate\_variable, which would have determined that x had 1 row and 1 column; there was only a single formula for x, applying to all cells of x; and that that formula corresponded to the function pointer indicated in the variable definition.
 When getVal was called, the value in the [0,0]th cell would similarly have been NULL. Therefore, getVal() would have determined the appropriate formula, and then called that formula-function with a pointer to the scope, and (0,0) for the row and column.

@@ -102,8 +102,9 @@ The transformer is the first step in converting the AST into LLVM code. It takes
     value_p foo() {
       scope = new ExtendScope;
 
-      // Load the apropriate set of definitions for foo
-      scope->defns = global_definitions[42];
+      // Load the appropriate set of definitions for foo;
+      // imagine foo is the 16th variable defined in the program
+      scope->defns = global_definitions[15];
 
       // Create an array of pointers to variable instances; one
       // pointer per variable. Only one variable in this function
@@ -111,7 +112,8 @@ The transformer is the first step in converting the AST into LLVM code. It takes
 
       // getVar calls instantiate_var if that instance pointer is still NULL,
       // or just returns the pointer if it's already been instantiated.
-      // The instantiated variable keeps a copy of the pointer to its scope
+      // The instantiated variable keeps a copy of the pointer to its scope.
+      // The 2nd argument to getVar is the variable's index within the function.
       var_instance *return_variable = getVar(scope, 0);
 
       // Get the value of cell [0,0] of return_variable
